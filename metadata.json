@@ -1,0 +1,6 @@
+{
+  "name": "Ethiopia Import Export & Logistics Academy",
+  "description": "Professional training and financial computation suite for Ethiopian import-export trade, LC settlement, customs tax assessment, and corridor logistics management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

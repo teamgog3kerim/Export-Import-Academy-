@@ -1,0 +1,317 @@
+import { UserProfile } from '../types';
+
+export interface TelegramWebAppUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+  photo_url?: string;
+  is_premium?: boolean;
+}
+
+export interface TelegramThemeParams {
+  bg_color?: string;
+  text_color?: string;
+  hint_color?: string;
+  link_color?: string;
+  button_color?: string;
+  button_text_color?: string;
+  secondary_bg_color?: string;
+  header_bg_color?: string;
+}
+
+export interface TelegramAuthValidationResult {
+  isValid: boolean;
+  role: 'admin' | 'user';
+  user: UserProfile | null;
+  status: 'admin_matched' | 'user_matched' | 'not_found' | 'invalid_input';
+  message: string;
+  telegramHandle: string;
+}
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        initData: string;
+        initDataUnsafe?: {
+          query_id?: string;
+          user?: TelegramWebAppUser;
+          auth_date?: string;
+          hash?: string;
+        };
+        version: string;
+        platform: string;
+        colorScheme: 'light' | 'dark';
+        themeParams: TelegramThemeParams;
+        isExpanded: boolean;
+        viewportHeight: number;
+        viewportStableHeight: number;
+        headerColor: string;
+        backgroundColor: string;
+        isClosingConfirmationEnabled: boolean;
+        ready: () => void;
+        expand: () => void;
+        close: () => void;
+        enableClosingConfirmation?: () => void;
+        setHeaderColor?: (color: string) => void;
+        setBackgroundColor?: (color: string) => void;
+        onEvent?: (eventType: string, eventHandler: () => void) => void;
+        offEvent?: (eventType: string, eventHandler: () => void) => void;
+        sendData?: (data: string) => void;
+        openLink?: (url: string, options?: { try_instant_view?: boolean }) => void;
+        openTelegramLink?: (url: string) => void;
+        HapticFeedback?: {
+          impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+          notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+          selectionChanged: () => void;
+        };
+        MainButton?: {
+          text: string;
+          color: string;
+          textColor: string;
+          isVisible: boolean;
+          isActive: boolean;
+          isProgressVisible: boolean;
+          setText: (text: string) => void;
+          onClick: (callback: () => void) => void;
+          offClick: (callback: () => void) => void;
+          show: () => void;
+          hide: () => void;
+          enable: () => void;
+          disable: () => void;
+          showProgress: (leaveActive: boolean) => void;
+          hideProgress: () => void;
+        };
+        BackButton?: {
+          isVisible: boolean;
+          onClick: (callback: () => void) => void;
+          offClick: (callback: () => void) => void;
+          show: () => void;
+          hide: () => void;
+        };
+      };
+    };
+  }
+}
+
+export const ADMIN_TELEGRAM_HANDLE = '@Eximmanlearnbot';
+export const ADMIN_TELEGRAM_NORMALIZED = 'eximmanlearnbot';
+
+/**
+ * Returns the Telegram WebApp instance if running in Telegram
+ */
+export function getTelegramWebApp() {
+  if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+    return window.Telegram.WebApp;
+  }
+  return null;
+}
+
+/**
+ * Detects if the app is currently running inside Telegram Mini App
+ */
+export function isTelegramMiniApp(): boolean {
+  const tg = getTelegramWebApp();
+  if (!tg) return false;
+  // If initData is present or platform is recognized (not 'unknown')
+  if (tg.initData && tg.initData.length > 0) return true;
+  if (tg.initDataUnsafe?.user) return true;
+  if (tg.platform && tg.platform !== 'unknown') return true;
+  return false;
+}
+
+/**
+ * Extracts current authenticated user from Telegram WebApp SDK
+ */
+export function getTelegramUser(): TelegramWebAppUser | null {
+  const tg = getTelegramWebApp();
+  return tg?.initDataUnsafe?.user || null;
+}
+
+/**
+ * Strips whitespace, leading @, and lowercases for uniform matching
+ */
+export function normalizeTelegramUsername(username: string): string {
+  if (!username) return '';
+  return username.trim().replace(/^@+/, '').toLowerCase();
+}
+
+/**
+ * Formats a username to always include @ prefix for display
+ */
+export function formatTelegramHandle(username: string): string {
+  if (!username) return '';
+  const clean = username.trim().replace(/^@+/, '');
+  return clean ? `@${clean}` : '';
+}
+
+/**
+ * Checks if a given username matches the designated admin (@Eximmanlearnbot)
+ */
+export function isAdminTelegram(username: string): boolean {
+  return normalizeTelegramUsername(username) === ADMIN_TELEGRAM_NORMALIZED;
+}
+
+/**
+ * Validates user credentials against admin and registered Telegram students
+ */
+export function validateTelegramCredentials(
+  input: { telegramUsername: string; phoneNumber?: string },
+  registeredUsers: UserProfile[]
+): TelegramAuthValidationResult {
+  const rawInput = input.telegramUsername?.trim() || '';
+  if (!rawInput) {
+    return {
+      isValid: false,
+      role: 'user',
+      user: null,
+      status: 'invalid_input',
+      message: 'Please enter a valid Telegram username.',
+      telegramHandle: ''
+    };
+  }
+
+  const normalized = normalizeTelegramUsername(rawInput);
+  const handle = `@${normalized}`;
+
+  // 1. Admin Verification
+  if (normalized === ADMIN_TELEGRAM_NORMALIZED) {
+    const adminUser = registeredUsers.find(
+      u => u.role === 'admin' || normalizeTelegramUsername(u.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED
+    ) || null;
+
+    return {
+      isValid: true,
+      role: 'admin',
+      user: adminUser,
+      status: 'admin_matched',
+      message: 'Authenticated as Administrator (@Eximmanlearnbot). Full access enabled.',
+      telegramHandle: ADMIN_TELEGRAM_HANDLE
+    };
+  }
+
+  // 2. Student Verification against Admin-defined / Registered Accounts
+  const matchedStudent = registeredUsers.find(
+    u => normalizeTelegramUsername(u.telegramUsername) === normalized
+  );
+
+  if (matchedStudent) {
+    const isPaid = matchedStudent.subscriptionStatus === 'active_paid';
+    const isPending = matchedStudent.subscriptionStatus === 'pending_approval';
+    const isExpired = matchedStudent.subscriptionStatus === 'expired';
+
+    let msg = `Welcome back, ${matchedStudent.fullName}!`;
+    if (isPaid) {
+      msg += ' Your 30-day subscription is active.';
+    } else if (isPending) {
+      msg += ' Your subscription is awaiting @Eximmanlearnbot approval.';
+    } else if (isExpired) {
+      msg += ' Your 30-day subscription has expired. You can resubscribe for 3,900 ETB / 30 days.';
+    } else {
+      msg += ' Free trial active (Chapters 1 & 2).';
+    }
+
+    return {
+      isValid: true,
+      role: 'user',
+      user: matchedStudent,
+      status: 'user_matched',
+      message: msg,
+      telegramHandle: handle
+    };
+  }
+
+  // 3. User Not Found in registered database
+  return {
+    isValid: false,
+    role: 'user',
+    user: null,
+    status: 'not_found',
+    message: `Telegram account ${handle} is not yet registered. You can enroll for Free Trial or submit a 3,900 ETB subscription.`,
+    telegramHandle: handle
+  };
+}
+
+/**
+ * Initializes Telegram Mini App environment
+ */
+export function initTelegramMiniApp(options?: {
+  onThemeChange?: (scheme: 'light' | 'dark') => void;
+  onViewportChange?: () => void;
+}) {
+  const tg = getTelegramWebApp();
+  if (!tg) return () => {};
+
+  try {
+    // Notify Telegram that WebApp is ready to be displayed
+    tg.ready();
+    
+    // Expand to full available height
+    if (!tg.isExpanded) {
+      tg.expand();
+    }
+
+    // Enable closing confirmation so accidental swipes don't discard lesson progress
+    if (tg.enableClosingConfirmation) {
+      tg.enableClosingConfirmation();
+    }
+
+    // Set colors matching academy palette
+    if (tg.setHeaderColor) {
+      tg.setHeaderColor('#174f49');
+    }
+    if (tg.setBackgroundColor) {
+      tg.setBackgroundColor(tg.colorScheme === 'dark' ? '#151d1b' : '#f5f6f1');
+    }
+
+    // Event listeners
+    const handleTheme = () => {
+      if (options?.onThemeChange && tg.colorScheme) {
+        options.onThemeChange(tg.colorScheme);
+      }
+    };
+
+    const handleViewport = () => {
+      if (options?.onViewportChange) {
+        options.onViewportChange();
+      }
+    };
+
+    if (tg.onEvent) {
+      tg.onEvent('themeChanged', handleTheme);
+      tg.onEvent('viewportChanged', handleViewport);
+    }
+
+    return () => {
+      if (tg.offEvent) {
+        tg.offEvent('themeChanged', handleTheme);
+        tg.offEvent('viewportChanged', handleViewport);
+      }
+    };
+  } catch (err) {
+    console.warn('[Telegram Mini App] Initialization notice:', err);
+    return () => {};
+  }
+}
+
+/**
+ * Triggers Telegram native haptic feedback
+ */
+export function triggerTelegramHaptic(
+  type: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' = 'light'
+) {
+  const tg = getTelegramWebApp();
+  if (!tg?.HapticFeedback) return;
+
+  try {
+    if (type === 'success' || type === 'warning' || type === 'error') {
+      tg.HapticFeedback.notificationOccurred(type);
+    } else {
+      tg.HapticFeedback.impactOccurred(type);
+    }
+  } catch {
+    // Ignore if not supported
+  }
+}
