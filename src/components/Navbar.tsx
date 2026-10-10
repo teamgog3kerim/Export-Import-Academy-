@@ -17,6 +17,7 @@ import {
   Menu,
   Moon,
   Shield,
+  Ship,
   Sun,
   X,
   Send,
@@ -180,7 +181,7 @@ export const Navbar: React.FC = () => {
             aria-label="Academy overview"
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[#174f49] text-[#efcf9e] shadow-sm transition-transform group-hover:-rotate-3">
-              <span className="font-serif-title text-sm font-extrabold tracking-[-.06em]">ET</span>
+              <Ship className="h-5 w-5 text-[#efcf9e]" strokeWidth={2.2} />
             </span>
             <span className="min-w-0">
               <span className="block truncate font-serif-title text-[15px] font-extrabold tracking-[-.035em] sm:text-base">
