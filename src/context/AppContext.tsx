@@ -47,6 +47,7 @@ interface AppContextType {
     fullName?: string;
     phoneNumber?: string;
   }) => { success: boolean; message: string; role: 'admin' | 'user' };
+  logout: () => void;
   isTelegramApp: boolean;
   telegramWebAppUser: TelegramWebAppUser | null;
   submitSubscriptionPayment: (data: {
@@ -76,11 +77,11 @@ interface AppContextType {
   recordQuizScore: (chapterId: string, score: number, maxScore: number) => void;
 }
 
-const STORAGE_KEY_USERS = 'ethio_impex_users_v5';
-const STORAGE_KEY_CURRENT_USER = 'ethio_impex_curr_user_v5';
+const STORAGE_KEY_USERS = 'ethio_impex_users_v6';
+const STORAGE_KEY_CURRENT_USER = 'ethio_impex_curr_user_v6';
 const STORAGE_KEY_THEME = 'ethio_impex_theme';
-const STORAGE_KEY_QUIZ_SCORES = 'ethio_impex_quiz_scores_v5';
-const STORAGE_KEY_USER_QUIZZES = 'ethio_impex_user_quizzes_v5';
+const STORAGE_KEY_QUIZ_SCORES = 'ethio_impex_quiz_scores_v6';
+const STORAGE_KEY_USER_QUIZZES = 'ethio_impex_user_quizzes_v6';
 
 type QuizScores = Record<string, { score: number; maxScore: number; date: string }>;
 const ALL_CHAPTERS = COURSE_MODULES.flatMap(module => module.chapters);
@@ -94,7 +95,7 @@ const saveLocal = (key: string, value: string) => {
   }
 };
 
-const ADMIN_BOT_USER: UserProfile = {
+export const ADMIN_BOT_USER: UserProfile = {
   id: 'admin-eximman-bot',
   fullName: 'Eximman Admin',
   telegramUsername: ADMIN_TELEGRAM_HANDLE,
@@ -108,77 +109,25 @@ const ADMIN_BOT_USER: UserProfile = {
   completedChapters: []
 };
 
-const DEFAULT_STUDENT_USER: UserProfile = {
-  id: 'student-01',
-  fullName: 'Abebe Kebede',
-  telegramUsername: '@abebe_trade',
-  phoneNumber: '09 1122 3344',
-  email: 'abebe@example.com',
+export const GUEST_STUDENT_USER: UserProfile = {
+  id: 'guest-student',
+  fullName: 'New Student (Guest)',
+  telegramUsername: '',
+  phoneNumber: '',
+  email: '',
   role: 'user',
   subscriptionStatus: 'free_trial',
-  registeredAt: '2026-01-01T00:00:00.000Z',
+  registeredAt: new Date().toISOString(),
   expiresAt: null,
   paymentAmount: 0,
-  completedChapters: ['ch-1']
+  completedChapters: []
 };
 
-const SEED_PAID_USER: UserProfile = {
-  id: 'student-02',
-  fullName: 'Selamawit Tesfaye',
-  telegramUsername: '@selam_exim',
-  phoneNumber: '09 2233 4455',
-  email: 'selam@example.com',
-  role: 'user',
-  subscriptionStatus: 'active_paid',
-  registeredAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-  approvedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-  expiresAt: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000).toISOString(), // 22 days left of 30
-  paymentAmount: 3900,
-  telebirrTxId: 'TB-8842199',
-  notes: 'Approved 30 days active subscription by @Eximmanlearnbot',
-  completedChapters: ['ch-1', 'ch-2', 'ch-3', 'ch-4', 'ch-5', 'ch-6']
-};
+// Filter out sample dummy accounts from previous versions
+const isSampleUserId = (id: string) =>
+  ['student-01', 'student-02', 'student-03', 'student-04'].includes(id);
 
-const SEED_EXPIRED_USER: UserProfile = {
-  id: 'student-03',
-  fullName: 'Dawit Haile',
-  telegramUsername: '@dawit_logistics',
-  phoneNumber: '09 3344 5566',
-  email: 'dawit@example.com',
-  role: 'user',
-  subscriptionStatus: 'expired',
-  registeredAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
-  approvedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
-  expiresAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // expired 5 days ago
-  paymentAmount: 3900,
-  telebirrTxId: 'TB-7712340',
-  notes: '30-day subscription expired. Ready to resubscribe for 3,900 ETB / 30 days.',
-  completedChapters: ['ch-1', 'ch-2', 'ch-3', 'ch-4']
-};
-
-const SEED_PENDING_USER: UserProfile = {
-  id: 'student-04',
-  fullName: 'Tigist Alemu',
-  telegramUsername: '@tigist_trade',
-  phoneNumber: '09 4455 6677',
-  email: 'tigist@example.com',
-  role: 'user',
-  subscriptionStatus: 'pending_approval',
-  registeredAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  expiresAt: null,
-  paymentAmount: 3900,
-  telebirrTxId: 'TB-9988214',
-  notes: 'Telebirr 3,900 ETB payment submitted for @Eximmanlearnbot approval',
-  completedChapters: ['ch-1']
-};
-
-const SEED_USERS: UserProfile[] = [
-  ADMIN_BOT_USER,
-  DEFAULT_STUDENT_USER,
-  SEED_PAID_USER,
-  SEED_EXPIRED_USER,
-  SEED_PENDING_USER
-];
+const INITIAL_USERS: UserProfile[] = [ADMIN_BOT_USER];
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -189,29 +138,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length) {
-          const hasBotAdmin = parsed.some(
+          const cleanList = parsed.filter(u => !isSampleUserId(u.id));
+          const hasBotAdmin = cleanList.some(
             u => isAdminTelegram(u.telegramUsername) && u.role === 'admin'
           );
           if (!hasBotAdmin) {
-            return [ADMIN_BOT_USER, ...parsed.filter(u => u.id !== 'admin-eximman-bot')];
+            return [ADMIN_BOT_USER, ...cleanList.filter(u => u.id !== 'admin-eximman-bot')];
           }
-          return parsed;
+          return cleanList.length ? cleanList : INITIAL_USERS;
         }
       }
     } catch (e) {
       console.error(e);
     }
-    return SEED_USERS;
+    return INITIAL_USERS;
   });
 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
-      if (stored) return stored;
+      if (stored && !isSampleUserId(stored)) return stored;
     } catch (e) {
       console.error(e);
     }
-    return 'student-01';
+    return 'guest-student';
   });
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -241,7 +191,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
       }
       const stored = localStorage.getItem(STORAGE_KEY_QUIZ_SCORES);
-      if (stored) return { 'student-01': JSON.parse(stored) };
+      if (stored) return { 'guest-student': JSON.parse(stored) };
     } catch (e) {
       console.error(e);
     }
@@ -328,7 +278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const currentUser = users.find(u => u.id === currentUserId) || users[0] || ADMIN_BOT_USER;
+  const currentUser = users.find(u => u.id === currentUserId) || GUEST_STUDENT_USER;
   const quizScores = userQuizScores[currentUser.id] || {};
 
   // @Eximmanlearnbot is designated administrator
@@ -657,6 +607,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveNavTab('admin');
   };
 
+  const logout = () => {
+    setCurrentUserId('guest-student');
+    setActiveNavTab('overview');
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -669,6 +624,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         adminExtendUser,
         switchUser,
         loginAsAdmin,
+        logout,
         loginWithTelegram,
         loginWithTelegramWidget,
         validateTelegramLogin,

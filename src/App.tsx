@@ -20,7 +20,6 @@ import { RecordsTracker } from './components/RecordsTracker';
 import { CertificationView } from './components/CertificationView';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { TelegramAuthModal } from './components/TelegramAuthModal';
-import { EximmanEmblem } from './components/EximmanLogo';
 import { AlertTriangle, Send } from 'lucide-react';
 
 const toolTabs = ['landed_cost', 'lc_calculator', 'tax_calculator', 'incoterms_guide'];
@@ -78,14 +77,9 @@ const MainContent: React.FC = () => {
 
       <footer className="no-print mt-8 border-t academy-line bg-[var(--paper)] py-6">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 text-[11px] sm:flex-row sm:items-center sm:justify-between sm:px-6 xl:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FAF6F0] dark:bg-[#25150E] border border-[#8B5330]/25 p-1">
-              <EximmanEmblem className="h-full w-full object-contain" />
-            </div>
-            <div>
-              <p className="font-serif-title text-sm font-black text-[#2E1810] dark:text-[#F7F2EC]">EXIMMAN • Export-Import and Logistics Academy</p>
-              <p className="mt-0.5 text-[11px] academy-muted">Professional training &amp; computational suite for Ethiopian international trade practitioners.</p>
-            </div>
+          <div>
+            <p className="font-serif-title text-sm font-extrabold">Export-Import Logistics Academy</p>
+            <p className="mt-1 academy-muted">Professional training & computational suite for Ethiopian international trade practitioners.</p>
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 academy-muted">
             {isTelegramApp && (

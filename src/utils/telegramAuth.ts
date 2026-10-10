@@ -206,6 +206,34 @@ export async function syncTelegramMenuButton(
 }
 
 /**
+ * Resets the Telegram chat menu button back to standard commands (removes any web_app URL)
+ */
+export async function resetTelegramMenuButton(): Promise<{ ok: boolean; message: string }> {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setChatMenuButton`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      return {
+        ok: true,
+        message: `Chat menu button in @${TELEGRAM_BOT_USERNAME} successfully reset to standard commands.`
+      };
+    } else {
+      return {
+        ok: false,
+        message: data.description || 'Failed to reset menu button'
+      };
+    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Connection failed';
+    return { ok: false, message };
+  }
+}
+
+/**
  * Sends a message notification via the bot to a Telegram chat ID
  */
 export async function sendTelegramBotMessage(

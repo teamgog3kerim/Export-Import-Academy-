@@ -22,7 +22,8 @@ import {
   X,
   Send,
   User,
-  Plus
+  Plus,
+  LogOut
 } from 'lucide-react';
 
 type NavItem = {
@@ -80,6 +81,7 @@ export const Navbar: React.FC = () => {
     switchUser,
     loginAsAdmin,
     loginWithTelegram,
+    logout,
     isAdmin,
     setShowPaywallModal,
     setShowTelegramAuthModal,
@@ -172,33 +174,34 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="no-print relative z-40 border-b academy-line bg-[var(--paper)]">
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 xl:px-8">
-        <div className="flex min-h-[68px] items-center justify-between gap-4">
+      <div className="mx-auto max-w-[1440px] px-2 sm:px-4 md:px-6 xl:px-8">
+        <div className="flex min-h-[54px] xs:min-h-[58px] sm:min-h-[64px] md:min-h-[68px] w-full items-center justify-between gap-1 xs:gap-1.5 sm:gap-3 md:gap-4">
           {/* Logo */}
           <button
             onClick={() => navigate('overview')}
-            className="group flex min-w-0 items-center gap-3 text-left"
-            aria-label="Academy overview"
+            className="group flex min-w-0 items-center gap-1.5 xs:gap-2 sm:gap-3 text-left shrink"
+            aria-label="Export-Import Logistics Academy overview"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[#174f49] text-[#efcf9e] shadow-sm transition-transform group-hover:-rotate-3">
-              <Ship className="h-5 w-5 text-[#efcf9e]" strokeWidth={2.2} />
+            <span className="flex h-8 w-8 xs:h-9 xs:w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-[10px] sm:rounded-[14px] bg-[#174f49] text-[#efcf9e] shadow-sm transition-transform group-hover:-rotate-3">
+              <Ship className="h-4 w-4 xs:h-4.5 xs:w-4.5 sm:h-5 sm:w-5 text-[#efcf9e]" strokeWidth={2.2} />
             </span>
             <span className="min-w-0">
-              <span className="block truncate font-serif-title text-[15px] font-extrabold tracking-[-.035em] sm:text-base">
-                Export-Import and Logistics Academy
+              <span className="block truncate font-serif-title text-[12px] xs:text-[13.5px] sm:text-base font-extrabold tracking-[-.035em]">
+                <span className="hidden sm:inline">Export-Import Logistics Academy</span>
+                <span className="sm:hidden">Export-Import Logistics Academy</span>
               </span>
-              <span className="mt-0.5 block text-[9px] font-bold uppercase tracking-[.15em] academy-muted">
+              <span className="mt-0.5 hidden xs:block text-[8.5px] sm:text-[9px] font-bold uppercase tracking-[.15em] academy-muted truncate">
                 Professional Trade Education
               </span>
             </span>
           </button>
 
           {/* Desktop Nav */}
-          <nav aria-label="Main navigation" className="hidden min-[1180px]:flex min-w-0 items-center gap-2">
+          <nav aria-label="Main navigation" className="hidden min-[1200px]:flex min-w-0 items-center gap-1 xl:gap-2 shrink">
             {sections.map(section => (
               <div
                 key={section.label}
-                className="flex items-center gap-0.5 border-r pr-2 academy-line last:border-0 last:pr-0"
+                className="flex items-center gap-0.5 border-r pr-1.5 xl:pr-2 academy-line last:border-0 last:pr-0"
               >
                 <span className="mr-1 hidden 2xl:block text-[9px] font-bold uppercase tracking-[.12em] academy-muted">
                   {section.label}
@@ -211,12 +214,15 @@ export const Navbar: React.FC = () => {
           </nav>
 
           {/* Actions & User Profile */}
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 xs:gap-1.5 sm:gap-2">
             {/* Telegram Mini App indicator if detected */}
             {isTelegramApp ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 text-[#1b7fae] dark:text-[#6cc2e9] text-[11px] font-semibold">
+              <span
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 xs:px-2 sm:px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 text-[#1b7fae] dark:text-[#6cc2e9] text-[10px] sm:text-[11px] font-semibold shrink-0"
+                title="Telegram Mini App active"
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-[#229ed9] animate-pulse" />
-                <span>Mini App</span>
+                <span className="hidden xs:inline">Mini App</span>
               </span>
             ) : (
               <a
@@ -224,7 +230,7 @@ export const Navbar: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Launch in Telegram Chatbot Mini App"
-                className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50/80 hover:bg-sky-100 dark:bg-sky-950/40 dark:hover:bg-sky-900/60 text-[#1b7fae] dark:text-[#6cc2e9] text-xs font-semibold transition-colors"
+                className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50/80 hover:bg-sky-100 dark:bg-sky-950/40 dark:hover:bg-sky-900/60 text-[#1b7fae] dark:text-[#6cc2e9] text-xs font-semibold transition-colors shrink-0"
               >
                 <Send className="h-3.5 w-3.5 text-[#229ed9]" />
                 <span>@Eximmanlearnbot</span>
@@ -235,10 +241,17 @@ export const Navbar: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowTelegramAuthModal(true)}
-              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50/70 hover:bg-sky-100 dark:bg-sky-950/40 dark:hover:bg-sky-900/60 text-[#1b7fae] dark:text-[#6cc2e9] text-xs font-semibold transition-colors"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 xs:px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border border-sky-300 dark:border-sky-800 bg-[#229ed9]/15 hover:bg-[#229ed9]/25 text-[#1b7fae] dark:text-[#6cc2e9] text-xs font-semibold transition-colors shrink-0"
+              title="Log in with Telegram account"
+              aria-label="Telegram Login"
             >
-              <Send className="h-3.5 w-3.5 text-[#229ed9]" />
-              <span>Telegram Login</span>
+              <Send className="h-3.5 w-3.5 text-[#229ed9] shrink-0" />
+              <span className="hidden sm:inline">
+                {currentUser.telegramUsername ? currentUser.telegramUsername : 'Telegram Login'}
+              </span>
+              <span className="hidden xs:inline sm:hidden text-[11px] font-medium">
+                {currentUser.telegramUsername ? currentUser.telegramUsername.replace(/^@/, '').slice(0, 6) + (currentUser.telegramUsername.length > 7 ? '…' : '') : 'Login'}
+              </span>
             </button>
 
             {/* Quick Subscription CTA for free trial or expired users */}
@@ -246,12 +259,12 @@ export const Navbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowPaywallModal(true)}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-2xs"
+                className="hidden md:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-2xs shrink-0 whitespace-nowrap"
               >
                 <span>
                   {currentUser.subscriptionStatus === 'expired'
-                    ? 'Renew (3,900 ETB / 30 Days)'
-                    : 'Subscribe (3,900 ETB / 30 Days)'}
+                    ? 'Renew (3,900 ETB)'
+                    : 'Subscribe (3,900 ETB)'}
                 </span>
               </button>
             )}
@@ -263,12 +276,13 @@ export const Navbar: React.FC = () => {
                 onClick={() => setUserDropdownOpen(value => !value)}
                 aria-expanded={userDropdownOpen}
                 aria-haspopup="menu"
-                className="flex min-h-10 items-center gap-2 rounded-xl border px-2 py-1.5 text-left transition hover:bg-[#f1f4ef] dark:hover:bg-[#26312d] sm:px-2.5 academy-line"
+                aria-label="User account menu"
+                className="flex min-h-[32px] xs:min-h-[36px] sm:min-h-10 items-center gap-1 xs:gap-1.5 sm:gap-2 rounded-xl border px-1 xs:px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-left transition hover:bg-[#f1f4ef] dark:hover:bg-[#26312d] academy-line shrink-0"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#dce9e2] text-[11px] font-bold text-[#205f53] dark:bg-[#344c43] dark:text-[#c8e6d8]">
+                <span className="flex h-6 w-6 xs:h-7 xs:w-7 sm:h-7.5 sm:w-7.5 shrink-0 items-center justify-center rounded-full bg-[#dce9e2] text-[10px] sm:text-[11px] font-bold text-[#205f53] dark:bg-[#344c43] dark:text-[#c8e6d8]">
                   {currentUser.fullName.charAt(0)}
                 </span>
-                <span className="hidden max-w-32 sm:block">
+                <span className="hidden md:block max-w-28 lg:max-w-32">
                   <span className="block truncate text-[11px] font-bold">
                     {currentUser.telegramUsername || currentUser.fullName}
                   </span>
@@ -276,7 +290,7 @@ export const Navbar: React.FC = () => {
                     {getUserBadgeText()}
                   </span>
                 </span>
-                <ChevronDown className="h-3.5 w-3.5 academy-muted" />
+                <ChevronDown className="h-3 w-3 sm:h-3.5 sm:w-3.5 academy-muted shrink-0" />
               </button>
 
               {userDropdownOpen && (
@@ -292,9 +306,15 @@ export const Navbar: React.FC = () => {
                     <p className="mt-1 truncate text-xs font-bold text-neutral-900 dark:text-neutral-100">
                       {currentUser.fullName}
                     </p>
-                    <p className="font-mono text-[11px] text-[#176b60] dark:text-[#8bc9b8]">
-                      {currentUser.telegramUsername}
-                    </p>
+                    {currentUser.telegramUsername ? (
+                      <p className="font-mono text-[11px] text-[#176b60] dark:text-[#8bc9b8]">
+                        {currentUser.telegramUsername}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-neutral-400 italic">
+                        Not linked to Telegram yet
+                      </p>
+                    )}
                     {currentUser.phoneNumber && (
                       <p className="text-[10px] font-mono text-neutral-500 mt-0.5">
                         {currentUser.phoneNumber}
@@ -305,39 +325,41 @@ export const Navbar: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Switch to or log in as student accounts */}
-                  <div className="py-1">
-                    <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                      Select Account
+                  {/* Switch to or log in as student accounts (if more than 1 registered user) */}
+                  {users.length > 1 && (
+                    <div className="py-1">
+                      <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                        Switch Account
+                      </div>
+                      <div className="max-h-40 overflow-y-auto space-y-0.5">
+                        {users.map(user => (
+                          <button
+                            key={user.id}
+                            role="menuitem"
+                            onClick={() => {
+                              switchUser(user.id);
+                              setUserDropdownOpen(false);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-[#eff3ee] dark:hover:bg-[#26312d] ${
+                              user.id === currentUser.id ? 'bg-[#e6f1ed] dark:bg-[#263a35]' : ''
+                            }`}
+                          >
+                            <div className="min-w-0 pr-2">
+                              <span className="block text-xs font-semibold truncate">
+                                {user.fullName}
+                              </span>
+                              <span className="block text-[10px] font-mono text-neutral-500 truncate">
+                                {user.telegramUsername}
+                              </span>
+                            </div>
+                            {user.id === currentUser.id && (
+                              <Check className="h-4 w-4 text-[#176b60] shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="max-h-40 overflow-y-auto space-y-0.5">
-                      {users.map(user => (
-                        <button
-                          key={user.id}
-                          role="menuitem"
-                          onClick={() => {
-                            switchUser(user.id);
-                            setUserDropdownOpen(false);
-                          }}
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-[#eff3ee] dark:hover:bg-[#26312d] ${
-                            user.id === currentUser.id ? 'bg-[#e6f1ed] dark:bg-[#263a35]' : ''
-                          }`}
-                        >
-                          <div className="min-w-0 pr-2">
-                            <span className="block text-xs font-semibold truncate">
-                              {user.fullName}
-                            </span>
-                            <span className="block text-[10px] font-mono text-neutral-500 truncate">
-                              {user.telegramUsername}
-                            </span>
-                          </div>
-                          {user.id === currentUser.id && (
-                            <Check className="h-4 w-4 text-[#176b60] shrink-0" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  )}
 
                   {/* Quick Telegram Sign In / Switch */}
                   {showTelegramForm ? (
@@ -381,7 +403,7 @@ export const Navbar: React.FC = () => {
                         className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#1b7fae] dark:text-[#6cc2e9] hover:bg-sky-50 dark:hover:bg-sky-950/40"
                       >
                         <Send className="h-3.5 w-3.5 text-[#229ed9]" />
-                        <span>Telegram Auth & Validation Helper</span>
+                        <span>Telegram Login Widget</span>
                       </button>
 
                       <button
@@ -390,7 +412,7 @@ export const Navbar: React.FC = () => {
                         className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-[#eff3ee] dark:hover:bg-[#26312d]"
                       >
                         <User className="h-3.5 w-3.5 text-neutral-500" />
-                        <span>Quick Handle Switch</span>
+                        <span>Sign In with Handle</span>
                       </button>
 
                       {!isAdmin && (
@@ -415,6 +437,20 @@ export const Navbar: React.FC = () => {
                         <CreditCard className="h-3.5 w-3.5 text-neutral-500" />
                         <span>Subscription Plans (3,900 ETB)</span>
                       </button>
+
+                      {currentUser.id !== 'guest-student' && (
+                        <button
+                          role="menuitem"
+                          onClick={() => {
+                            logout();
+                            setUserDropdownOpen(false);
+                          }}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                        >
+                          <LogOut className="h-3.5 w-3.5 text-rose-500" />
+                          <span>Log Out (Guest Mode)</span>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -426,7 +462,7 @@ export const Navbar: React.FC = () => {
               type="button"
               onClick={toggleTheme}
               aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-[#68766f] transition hover:bg-[#eef1ec] dark:text-[#b7c1ba] dark:hover:bg-[#26312d]"
+              className="flex h-8 w-8 xs:h-9 xs:w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl text-[#68766f] transition hover:bg-[#eef1ec] dark:text-[#b7c1ba] dark:hover:bg-[#26312d]"
             >
               {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4 text-[#e6b57d]" />}
             </button>
@@ -437,9 +473,9 @@ export const Navbar: React.FC = () => {
               onClick={() => setMobileMenuOpen(value => !value)}
               aria-expanded={mobileMenuOpen}
               aria-label={mobileMenuOpen ? 'Close navigation' : 'Open navigation'}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-[#596760] hover:bg-[#eef1ec] dark:text-[#d5ddd7] dark:hover:bg-[#26312d] min-[1180px]:hidden"
+              className="flex h-8 w-8 xs:h-9 xs:w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl text-[#596760] hover:bg-[#eef1ec] dark:text-[#d5ddd7] dark:hover:bg-[#26312d] min-[1200px]:hidden"
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X className="h-4.5 w-4.5 sm:h-5 sm:w-5" /> : <Menu className="h-4.5 w-4.5 sm:h-5 sm:w-5" />}
             </button>
           </div>
         </div>
@@ -448,7 +484,7 @@ export const Navbar: React.FC = () => {
         {mobileMenuOpen && (
           <nav
             aria-label="Mobile navigation"
-            className="max-h-[calc(100dvh-72px)] overflow-y-auto border-t py-4 academy-line min-[1180px]:hidden"
+            className="max-h-[calc(100dvh-72px)] overflow-y-auto border-t py-4 academy-line min-[1200px]:hidden"
           >
             <div className="grid gap-5 sm:grid-cols-2">
               {sections.map(section => (

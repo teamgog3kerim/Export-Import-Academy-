@@ -9,6 +9,7 @@ import {
   Search,
   RotateCcw,
   ShieldCheck,
+  AlertCircle,
   Send,
   Smartphone,
   UserPlus,
@@ -32,6 +33,7 @@ import {
   TELEGRAM_BOT_NAME,
   fetchTelegramBotInfo,
   syncTelegramMenuButton,
+  resetTelegramMenuButton,
   TelegramBotInfo
 } from '../utils/telegramAuth';
 
@@ -91,6 +93,21 @@ export const AdminDashboard: React.FC = () => {
     if (result.ok) {
       setSyncFeedback({ type: 'success', message: result.message });
       // Refresh bot info
+      const updated = await fetchTelegramBotInfo();
+      setBotInfo(updated);
+    } else {
+      setSyncFeedback({ type: 'error', message: result.message });
+    }
+    setIsSyncing(false);
+  };
+
+  const handleResetMenuButton = async () => {
+    setIsSyncing(true);
+    setSyncFeedback({ type: 'idle', message: '' });
+
+    const result = await resetTelegramMenuButton();
+    if (result.ok) {
+      setSyncFeedback({ type: 'success', message: result.message });
       const updated = await fetchTelegramBotInfo();
       setBotInfo(updated);
     } else {
@@ -314,14 +331,14 @@ export const AdminDashboard: React.FC = () => {
 
           <div className="p-3.5 rounded-xl bg-white/80 dark:bg-neutral-850 border border-neutral-200/80 dark:border-neutral-800 text-xs">
             <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 block">
-              Active Telegram Menu Button URL
+              Active Telegram Menu Button
             </span>
             <div className="mt-1 font-mono text-[11px] text-[#1b7fae] dark:text-[#6cc2e9] truncate font-medium">
-              {botInfo?.menuButtonUrl || 'https://ais-dev-nft5jzi37kuatg2q6f77lw-761402629536.europe-west2.run.app'}
+              {botInfo?.menuButtonUrl ? botInfo.menuButtonUrl : 'Standard Bot Commands (No Dev URL)'}
             </div>
             <span className="mt-1 text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
               <Check className="h-3 w-3" />
-              Button Text: "Launch Academy"
+              {botInfo?.menuButtonUrl ? 'Type: Web App ("Launch Academy")' : 'Type: Native Bot Commands'}
             </span>
           </div>
 
@@ -351,15 +368,15 @@ export const AdminDashboard: React.FC = () => {
           <form onSubmit={handleSyncMenuButton} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <div className="relative flex-1">
               <span className="absolute left-3 top-2.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-                Mini App URL:
+                Production Mini App URL:
               </span>
               <input
                 type="url"
                 required
                 value={targetMiniAppUrl}
                 onChange={e => setTargetMiniAppUrl(e.target.value)}
-                placeholder="https://..."
-                className="w-full pl-28 pr-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl text-xs font-mono text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-[#229ed9]"
+                placeholder="https://your-domain.ethiodeploy.com"
+                className="w-full pl-44 pr-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl text-xs font-mono text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-[#229ed9]"
               />
             </div>
 
@@ -369,9 +386,27 @@ export const AdminDashboard: React.FC = () => {
               className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:opacity-60 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs shrink-0"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Syncing...' : 'Sync URL to Telegram Bot'}</span>
+              <span>{isSyncing ? 'Syncing...' : 'Sync Live URL'}</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isSyncing}
+              onClick={handleResetMenuButton}
+              className="px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shrink-0"
+              title="Reset Telegram Menu Button to default commands (clears web app URL)"
+            >
+              <span>Reset to Commands</span>
             </button>
           </form>
+
+          {/* Google Login Protection Notice */}
+          <div className="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+            <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="leading-relaxed text-[11px]">
+              <strong>Why Google Sign-In Appeared:</strong> Google AI Studio development preview URLs (<code>ais-dev-...</code>) are protected by Google Cloud IAP, which prompts visitors for Google accounts. Regular Telegram users cannot open that URL. Once you deploy this applet to production (e.g. your EthioDeploy, custom domain, or public host), enter that public HTTPS address above to link it directly to the Telegram Menu Button!
+            </div>
+          </div>
 
           {syncFeedback.message && (
             <div
@@ -468,8 +503,15 @@ export const AdminDashboard: React.FC = () => {
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-neutral-400">
-                    No students match the selected filter.
+                  <td colSpan={6} className="py-12 text-center">
+                    <div className="max-w-md mx-auto space-y-2">
+                      <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                        No registered students yet
+                      </p>
+                      <p className="text-xs text-neutral-400 leading-relaxed">
+                        The academy is clean and ready for real users! Students will automatically appear here once they log in via Telegram (@Eximmanlearnbot widget or Mini App) or submit their 3,900 ETB subscription.
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (

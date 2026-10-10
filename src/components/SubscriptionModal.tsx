@@ -25,11 +25,12 @@ interface Props {
 export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { currentUser, submitSubscriptionPayment, isTelegramApp, telegramWebAppUser } = useApp();
 
+  const isGuest = currentUser.id === 'guest-student';
   const [telegramUsername, setTelegramUsername] = useState(
     currentUser.telegramUsername || (telegramWebAppUser?.username ? `@${telegramWebAppUser.username}` : '')
   );
   const [fullName, setFullName] = useState(
-    currentUser.fullName || [telegramWebAppUser?.first_name, telegramWebAppUser?.last_name].filter(Boolean).join(' ') || ''
+    (!isGuest && currentUser.fullName) || [telegramWebAppUser?.first_name, telegramWebAppUser?.last_name].filter(Boolean).join(' ') || ''
   );
   const [phoneNumber, setPhoneNumber] = useState(
     currentUser.phoneNumber || ''
