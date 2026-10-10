@@ -20,6 +20,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { triggerTelegramHaptic } from '../utils/telegramAuth';
+import { TelegramLoginWidget } from './TelegramLoginWidget';
 
 export const SubscriptionView: React.FC = () => {
   const {
@@ -462,6 +463,42 @@ export const SubscriptionView: React.FC = () => {
               <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center gap-2 text-xs text-rose-800 dark:text-rose-200">
                 <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
                 <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {/* Quick Telegram Account Linking Widget */}
+            {!currentUser.telegramUsername || currentUser.telegramUsername === '@Eximmanlearnbot' ? (
+              <div className="p-4 bg-sky-50/70 dark:bg-sky-950/20 border border-sky-200/80 dark:border-sky-900/40 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-sky-900 dark:text-sky-200 flex items-center gap-1.5">
+                    <Send className="h-3.5 w-3.5 text-[#229ed9]" />
+                    <span>Log in with Telegram to Link Your Subscription</span>
+                  </span>
+                </div>
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                  Log in with Telegram via @Eximmanlearnbot to automatically connect your account and verify your subscription status.
+                </p>
+                <div className="pt-1 flex justify-center">
+                  <TelegramLoginWidget
+                    size="medium"
+                    showDirectLink={false}
+                    onSuccess={widgetUser => {
+                      const handle = widgetUser.username ? `@${widgetUser.username}` : `@id${widgetUser.id}`;
+                      setTelegramUsername(handle);
+                      const name = [widgetUser.first_name, widgetUser.last_name].filter(Boolean).join(' ');
+                      if (name) setFullName(name);
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-sky-50/60 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800 rounded-xl flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-neutral-600 dark:text-neutral-300">
+                    Linked to Telegram account: <strong className="text-[#1b7fae] dark:text-[#6cc2e9]">{currentUser.telegramUsername}</strong>
+                  </span>
+                </div>
               </div>
             )}
 

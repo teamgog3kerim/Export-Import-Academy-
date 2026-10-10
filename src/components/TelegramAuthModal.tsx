@@ -18,6 +18,7 @@ import {
   formatTelegramHandle,
   triggerTelegramHaptic
 } from '../utils/telegramAuth';
+import { TelegramLoginWidget } from './TelegramLoginWidget';
 
 interface Props {
   isOpen: boolean;
@@ -227,6 +228,35 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <span>{feedback.text}</span>
           </div>
         )}
+
+        {/* Official Telegram Login Widget */}
+        <div className="rounded-2xl border border-sky-100 dark:border-sky-950 bg-sky-50/50 dark:bg-sky-950/20 p-4 text-center space-y-2.5">
+          <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-sky-900 dark:text-sky-200">
+            <Send className="h-3.5 w-3.5 text-[#229ed9]" />
+            <span>One-Click Telegram Widget Login</span>
+          </div>
+          <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+            Authorize securely through @Eximmanlearnbot:
+          </p>
+          <TelegramLoginWidget
+            size="large"
+            radius={12}
+            showDirectLink={false}
+            onSuccess={() => {
+              setTimeout(() => {
+                onClose();
+              }, 1200);
+            }}
+          />
+        </div>
+
+        <div className="relative flex items-center justify-center">
+          <div className="border-t border-neutral-200 dark:border-neutral-800 w-full" />
+          <span className="bg-white dark:bg-neutral-900 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-400 shrink-0">
+            Or Enter Username
+          </span>
+          <div className="border-t border-neutral-200 dark:border-neutral-800 w-full" />
+        </div>
 
         {/* Form */}
         <form onSubmit={handleLoginSubmit} className="space-y-3.5 text-xs">

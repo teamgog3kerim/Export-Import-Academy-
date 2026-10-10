@@ -10,6 +10,16 @@ export interface TelegramWebAppUser {
   is_premium?: boolean;
 }
 
+export interface TelegramWidgetUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
+}
+
 export interface TelegramThemeParams {
   bg_color?: string;
   text_color?: string;
@@ -32,6 +42,7 @@ export interface TelegramAuthValidationResult {
 
 declare global {
   interface Window {
+    onTelegramAuth?: (user: TelegramWidgetUser) => void;
     Telegram?: {
       WebApp?: {
         initData: string;
@@ -98,6 +109,126 @@ declare global {
 
 export const ADMIN_TELEGRAM_HANDLE = '@Eximmanlearnbot';
 export const ADMIN_TELEGRAM_NORMALIZED = 'eximmanlearnbot';
+export const TELEGRAM_BOT_TOKEN = '8569973222:AAGLyuItmHoanxh-5P6L8eQf40TDQJxOYsk';
+export const TELEGRAM_BOT_USERNAME = 'Eximmanlearnbot';
+export const TELEGRAM_BOT_ID = '8569973222';
+export const TELEGRAM_BOT_NAME = 'EXIMMAN LEARN';
+
+export interface TelegramBotInfo {
+  ok: boolean;
+  username?: string;
+  firstName?: string;
+  id?: number;
+  menuButtonUrl?: string;
+  error?: string;
+}
+
+/**
+ * Fetches live bot details from Telegram Bot API using the configured token
+ */
+export async function fetchTelegramBotInfo(): Promise<TelegramBotInfo> {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe`);
+    const data = await res.json();
+    if (!data.ok) {
+      return { ok: false, error: data.description || 'Failed to fetch bot profile' };
+    }
+
+    let menuUrl: string | undefined;
+    try {
+      const menuRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChatMenuButton`);
+      const menuData = await menuRes.json();
+      if (menuData.ok && menuData.result?.web_app?.url) {
+        menuUrl = menuData.result.web_app.url;
+      }
+    } catch {
+      // Menu button query optional
+    }
+
+    return {
+      ok: true,
+      username: data.result.username,
+      firstName: data.result.first_name,
+      id: data.result.id,
+      menuButtonUrl: menuUrl
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Network error';
+    return { ok: false, error: message };
+  }
+}
+
+/**
+ * Updates the Telegram chat menu button so that clicking it launches this Mini App
+ */
+export async function syncTelegramMenuButton(
+  targetUrl: string,
+  buttonText = 'Launch Academy'
+): Promise<{ ok: boolean; message: string }> {
+  try {
+    const cleanUrl = targetUrl.trim();
+    if (!cleanUrl.startsWith('https://')) {
+      return {
+        ok: false,
+        message: 'Telegram Mini Apps require a secure HTTPS URL (https://...)'
+      };
+    }
+
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setChatMenuButton`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        menu_button: {
+          type: 'web_app',
+          text: buttonText,
+          web_app: {
+            url: cleanUrl
+          }
+        }
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      return {
+        ok: true,
+        message: `Chat menu button in @${TELEGRAM_BOT_USERNAME} successfully updated to: ${cleanUrl}`
+      };
+    } else {
+      return {
+        ok: false,
+        message: data.description || 'Telegram Bot API error updating menu button'
+      };
+    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Connection failed';
+    return { ok: false, message };
+  }
+}
+
+/**
+ * Sends a message notification via the bot to a Telegram chat ID
+ */
+export async function sendTelegramBotMessage(
+  chatId: string | number,
+  text: string
+): Promise<{ ok: boolean; message?: string }> {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML'
+      })
+    });
+    const data = await res.json();
+    return { ok: data.ok, message: data.description };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Connection failed';
+    return { ok: false, message };
+  }
+}
 
 /**
  * Returns the Telegram WebApp instance if running in Telegram

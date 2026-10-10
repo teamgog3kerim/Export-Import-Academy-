@@ -213,11 +213,22 @@ export const Navbar: React.FC = () => {
           {/* Actions & User Profile */}
           <div className="flex shrink-0 items-center gap-2">
             {/* Telegram Mini App indicator if detected */}
-            {isTelegramApp && (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 text-[#1b7fae] dark:text-[#6cc2e9] text-[11px] font-semibold">
+            {isTelegramApp ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 text-[#1b7fae] dark:text-[#6cc2e9] text-[11px] font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#229ed9] animate-pulse" />
                 <span>Mini App</span>
               </span>
+            ) : (
+              <a
+                href="https://t.me/Eximmanlearnbot"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Launch in Telegram Chatbot Mini App"
+                className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50/80 hover:bg-sky-100 dark:bg-sky-950/40 dark:hover:bg-sky-900/60 text-[#1b7fae] dark:text-[#6cc2e9] text-xs font-semibold transition-colors"
+              >
+                <Send className="h-3.5 w-3.5 text-[#229ed9]" />
+                <span>@Eximmanlearnbot</span>
+              </a>
             )}
 
             {/* Quick Telegram Auth Modal button */}

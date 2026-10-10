@@ -10,6 +10,7 @@ import {
   formatTelegramHandle,
   isAdminTelegram,
   TelegramWebAppUser,
+  TelegramWidgetUser,
   TelegramAuthValidationResult,
   ADMIN_TELEGRAM_HANDLE
 } from '../utils/telegramAuth';
@@ -39,6 +40,7 @@ interface AppContextType {
   switchUser: (userId: string) => void;
   loginAsAdmin: () => void;
   loginWithTelegram: (telegramUsername: string, fullName?: string, phoneNumber?: string) => void;
+  loginWithTelegramWidget: (widgetUser: TelegramWidgetUser) => { success: boolean; message: string; role: 'admin' | 'user' };
   validateTelegramLogin: (telegramUsername: string, phoneNumber?: string) => TelegramAuthValidationResult;
   seamlessTelegramAuth: (credentials: {
     telegramUsername: string;
@@ -505,6 +507,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const loginWithTelegramWidget = (widgetUser: TelegramWidgetUser) => {
+    const rawHandle = widgetUser.username ? `@${widgetUser.username}` : `@id${widgetUser.id}`;
+    const formatted = formatTelegramHandle(rawHandle);
+    const fullName = [widgetUser.first_name, widgetUser.last_name].filter(Boolean).join(' ') || formatted;
+
+    if (isAdminTelegram(formatted)) {
+      loginAsAdmin();
+      return { success: true, message: 'Authenticated as Administrator (@Eximmanlearnbot)', role: 'admin' as const };
+    }
+
+    const matched = users.find(
+      u => normalizeTelegramUsername(u.telegramUsername) === normalizeTelegramUsername(formatted)
+    );
+
+    if (matched) {
+      if (!matched.fullName || matched.fullName === formatted) {
+        setUsers(prev => prev.map(u => (u.id === matched.id ? { ...u, fullName } : u)));
+      }
+      switchUser(matched.id);
+      return { success: true, message: `Welcome back, ${matched.fullName || fullName}!`, role: 'user' as const };
+    }
+
+    const newUser: UserProfile = {
+      id: `tg-${widgetUser.id || Date.now()}`,
+      fullName,
+      telegramUsername: formatted,
+      phoneNumber: '',
+      role: 'user',
+      subscriptionStatus: 'free_trial',
+      registeredAt: new Date().toISOString(),
+      expiresAt: null,
+      paymentAmount: 0,
+      completedChapters: []
+    };
+
+    setUsers(prev => [...prev, newUser]);
+    setCurrentUserId(newUser.id);
+    return {
+      success: true,
+      message: `Enrolled student account for ${fullName} (${formatted}). Free trial activated!`,
+      role: 'user' as const
+    };
+  };
+
   const validateTelegramLogin = (telegramUsername: string, phoneNumber?: string): TelegramAuthValidationResult => {
     return validateTelegramCredentials({ telegramUsername, phoneNumber }, users);
   };
@@ -624,6 +670,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         switchUser,
         loginAsAdmin,
         loginWithTelegram,
+        loginWithTelegramWidget,
         validateTelegramLogin,
         seamlessTelegramAuth,
         isTelegramApp,
