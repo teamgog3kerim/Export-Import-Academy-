@@ -1,13 +1,17 @@
 # Nixpacks configuration for Export-Import Academy
 
 [phases.setup]
-nixPkgs = ["nodejs_22", "npm-9_x", "caddy"]
+nixPkgs = ["nodejs_22", "caddy"]
 
 [phases.install]
-cmds = ["npm ci --include=dev"]
+cmds = ["npm ci"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+  "npm run build",
+  "mkdir -p /assets && cp Caddyfile /assets/Caddyfile"
+]
 
 [start]
-cmd = "exec caddy run --config /assets/Caddyfile --adapter caddyfile 2>&1"
+cmd = "exec caddy run --config Caddyfile --adapter caddyfile 2>&1"
+
