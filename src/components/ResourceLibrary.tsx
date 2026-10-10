@@ -19,7 +19,8 @@ import {
   X,
   ClipboardCheck,
   Compass,
-  BookMarked
+  BookMarked,
+  Scale
 } from 'lucide-react';
 import { LogisticsTradeGlossary } from './LogisticsTradeGlossary';
 
@@ -180,6 +181,17 @@ Check current proclamations and directives directly with the respective issuing 
               : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
           }`}>
             30+ Terms
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveNavTab('incoterms_guide')}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800"
+        >
+          <Scale className="w-4 h-4 text-[#176b60]" />
+          <span>Incoterms® 2020 Guide</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold ml-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+            Interactive
           </span>
         </button>
       </div>

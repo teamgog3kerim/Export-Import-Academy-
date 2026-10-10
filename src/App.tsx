@@ -11,6 +11,7 @@ import { CourseViewer } from './components/CourseViewer';
 import { CostBreakdownSheet } from './components/CostBreakdownSheet';
 import { LCCalculator } from './components/LCCalculator';
 import { TaxAssessmentCalculator } from './components/TaxAssessmentCalculator';
+import { IncotermsGuide } from './components/IncotermsGuide';
 import { QuizCenter } from './components/QuizCenter';
 import { SubscriptionView } from './components/SubscriptionView';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -21,7 +22,7 @@ import { SubscriptionModal } from './components/SubscriptionModal';
 import { TelegramAuthModal } from './components/TelegramAuthModal';
 import { AlertTriangle, Send } from 'lucide-react';
 
-const toolTabs = ['landed_cost', 'lc_calculator', 'tax_calculator'];
+const toolTabs = ['landed_cost', 'lc_calculator', 'tax_calculator', 'incoterms_guide'];
 
 const MainContent: React.FC = () => {
   const {
@@ -64,6 +65,7 @@ const MainContent: React.FC = () => {
         {activeNavTab === 'landed_cost' && <CostBreakdownSheet />}
         {activeNavTab === 'lc_calculator' && <LCCalculator />}
         {activeNavTab === 'tax_calculator' && <TaxAssessmentCalculator />}
+        {activeNavTab === 'incoterms_guide' && <IncotermsGuide />}
         {activeNavTab === 'quiz_center' && <QuizCenter />}
         {activeNavTab === 'subscription' && <SubscriptionView />}
         {showAdmin && <AdminDashboard />}

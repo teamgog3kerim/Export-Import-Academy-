@@ -20,6 +20,7 @@ export type NavTabType =
   | 'lc_calculator'
   | 'landed_cost'
   | 'tax_calculator'
+  | 'incoterms_guide'
   | 'quiz_center'
   | 'resources'
   | 'progress'

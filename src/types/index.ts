@@ -281,4 +281,90 @@ export interface GlossaryTerm {
   tags: string[];
 }
 
+export type IncotermCode =
+  | 'EXW'
+  | 'FCA'
+  | 'CPT'
+  | 'CIP'
+  | 'DAP'
+  | 'DPU'
+  | 'DDP'
+  | 'FAS'
+  | 'FOB'
+  | 'CFR'
+  | 'CIF';
+
+export type IncotermCategory = 'any_mode' | 'sea_inland_waterway';
+export type IncotermParty = 'seller' | 'buyer' | 'shared' | 'not_applicable';
+
+export type SupplyChainStageId =
+  | 'packaging'
+  | 'pre_carriage'
+  | 'export_clearance'
+  | 'origin_terminal'
+  | 'loading'
+  | 'main_carriage'
+  | 'transit_insurance'
+  | 'arrival_terminal'
+  | 'transit_corridor'
+  | 'import_clearance'
+  | 'final_delivery';
+
+export interface SupplyChainStage {
+  id: SupplyChainStageId;
+  stepNumber: number;
+  title: string;
+  shortTitle: string;
+  iconName: string;
+  location: string;
+  description: string;
+  ethiopianCorridorDetail: string;
+}
+
+export interface IncotermStageResponsibility {
+  cost: IncotermParty;
+  risk: 'seller' | 'buyer';
+  notes: string;
+}
+
+export interface IncotermDefinition {
+  code: IncotermCode;
+  name: string;
+  amharicName: string;
+  category: IncotermCategory;
+  summary: string;
+  riskTransferPoint: string;
+  costTransferPoint: string;
+  splitRiskAndCost: boolean;
+  ethiopianStatus: 'standard_import' | 'recommended_export' | 'conditional_waiver' | 'restricted_impractical';
+  ethiopianStatusLabel: string;
+  ethiopiaRegulationNotes: string;
+  insuranceRequirement: string;
+  eslseRelevance: string;
+  advantages: string[];
+  disadvantages: string[];
+  ethiopianPracticalAdvice: string[];
+  proformaClauseExample: string;
+  stageResponsibilities: Record<SupplyChainStageId, IncotermStageResponsibility>;
+  exampleScenario: {
+    direction: 'import' | 'export';
+    commodity: string;
+    route: string;
+    breakdown: string;
+  };
+}
+
+export interface IncotermCaseStudy {
+  id: string;
+  title: string;
+  subtitle: string;
+  termInvolved: IncotermCode;
+  direction: 'import' | 'export';
+  background: string;
+  theDispute: string;
+  keyQuestion: string;
+  legalRuling: string;
+  practicalTakeaway: string;
+}
+
 

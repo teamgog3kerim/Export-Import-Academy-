@@ -323,6 +323,28 @@ export const CourseViewer: React.FC = () => {
             {currentChapter.description}
           </p>
 
+          {currentChapter.chapterNumber === 7 && (
+            <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-emerald-900/10 via-emerald-800/5 to-transparent border border-emerald-300 dark:border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div>
+                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block">
+                  Interactive Practice Tool
+                </span>
+                <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                  Incoterms® 2020 Interactive Stage & Responsibility Guide
+                </p>
+                <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
+                  Inspect visual cost and risk division across 11 corridor stages, run dispute case studies, and use the decision wizard.
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveNavTab('incoterms_guide')}
+                className="shrink-0 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+              >
+                Launch Incoterms Guide <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* Interactive sub-tabs */}
           {!isLocked && (
             <div className="flex flex-wrap gap-2 pt-5 border-t border-neutral-100 dark:border-neutral-800 mt-5">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, ArrowDownRight, ArrowRight, BookOpen, Check, Clock3, FileText, Landmark, PackageCheck, Play, Sparkles } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowRight, BookOpen, Check, Clock3, Compass, FileText, Landmark, PackageCheck, Play, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COURSE_MODULES } from '../data/courseData';
 
@@ -7,6 +7,7 @@ const toolLinks = [
   { tab: 'landed_cost', title: 'Landed cost build-up', description: 'Bring purchase, freight, banking and clearance costs together.', icon: PackageCheck },
   { tab: 'lc_calculator', title: 'Letter of credit', description: 'Explore opening and settlement estimates for an L/C.', icon: Landmark },
   { tab: 'tax_calculator', title: 'Customs tax assessment', description: 'Practice a structured estimate of import taxes.', icon: FileText },
+  { tab: 'incoterms_guide', title: 'Incoterms® 2020 guide', description: 'Interactive cost & risk responsibilities along the Ethiopian corridor.', icon: Compass },
 ] as const;
 
 export const LearningDashboard: React.FC = () => {

@@ -8,6 +8,7 @@ import {
   Check,
   ChevronDown,
   Coins,
+  Compass,
   CreditCard,
   FileCheck2,
   FileSpreadsheet,
@@ -33,6 +34,7 @@ type NavItem = {
     | 'landed_cost'
     | 'lc_calculator'
     | 'tax_calculator'
+    | 'incoterms_guide'
     | 'resources'
     | 'subscription'
     | 'admin';
@@ -57,6 +59,7 @@ const sections: { label: string; items: NavItem[] }[] = [
       { id: 'landed_cost', label: 'Landed cost', icon: FileSpreadsheet },
       { id: 'lc_calculator', label: 'L/C calculator', icon: Calculator },
       { id: 'tax_calculator', label: 'Customs tax', icon: Coins },
+      { id: 'incoterms_guide', label: 'Incoterms guide', icon: Compass },
     ],
   },
   {
