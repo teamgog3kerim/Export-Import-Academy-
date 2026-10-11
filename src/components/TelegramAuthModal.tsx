@@ -66,7 +66,7 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     if (res.role === 'admin') {
       setValidationStatus('admin');
-      setStatusMessage('Designated Administrator (@Eximmanlearnbot) credentials recognized.');
+      setStatusMessage('Designated Administrator (@EximmanAbdIstad) credentials recognized.');
     } else if (res.status === 'user_matched' && res.user) {
       setValidationStatus('existing_student');
       const sub =
@@ -151,7 +151,7 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 Telegram Authentication
               </h2>
               <p className="text-[11px] text-neutral-500">
-                Seamless login for students & @Eximmanlearnbot
+                Seamless login with your Telegram account
               </p>
             </div>
           </div>
@@ -267,7 +267,7 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <span>Telegram Username *</span>
               </span>
               <span className="text-[10px] text-neutral-400 font-normal">
-                Admin: @Eximmanlearnbot
+                e.g. @username
               </span>
             </label>
             <input
@@ -357,7 +357,7 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <Send className="h-3.5 w-3.5" />
               <span>
                 {validationStatus === 'admin'
-                  ? 'Log in as @Eximmanlearnbot (Admin)'
+                  ? 'Log in as Administrator (@EximmanAbdIstad)'
                   : validationStatus === 'existing_student'
                   ? 'Validate & Log In'
                   : 'Enroll & Start Free Trial'}

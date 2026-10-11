@@ -3,7 +3,7 @@ export type SubscriptionStatus = 'free_trial' | 'pending_approval' | 'active_pai
 export interface UserProfile {
   id: string;
   fullName: string;
-  telegramUsername: string; // e.g. @Eximmanlearnbot or @username
+  telegramUsername: string; // e.g. @EximmanAbdIstad or @username
   phoneNumber: string; // e.g. 09 6768 4490
   email?: string;
   role: 'user' | 'admin';

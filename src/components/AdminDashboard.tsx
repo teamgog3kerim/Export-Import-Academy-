@@ -191,7 +191,7 @@ export const AdminDashboard: React.FC = () => {
             <ShieldCheck className="w-4 h-4" />
             <span>Administrator Control Center</span>
             <span>·</span>
-            <span className="font-mono text-neutral-900 dark:text-neutral-100 font-bold">@Eximmanlearnbot</span>
+            <span className="font-mono text-neutral-900 dark:text-neutral-100 font-bold">@EximmanAbdIstad</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-serif-title font-bold text-neutral-900 dark:text-neutral-50 mt-1">
             Subscription Approvals & Student Management

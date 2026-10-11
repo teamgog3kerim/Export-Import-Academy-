@@ -424,7 +424,7 @@ export const RecordsTracker: React.FC = () => {
                           onClick={() => setShowPaywallModal(true)}
                           className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-700 hover:bg-amber-800 text-white transition-colors"
                         >
-                          Subscribe (3,900 ETB)
+                          Subscribe (3,900 ETB · 60% Off)
                         </button>
                       ) : (
                         <>

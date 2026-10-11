@@ -88,7 +88,7 @@ const MainContent: React.FC = () => {
                 <span>Telegram Mini App</span>
               </span>
             )}
-            <span>Subscription: 3,900 ETB via telebirr</span>
+            <span>Subscription: 3,900 ETB via telebirr (Promotional 60% Discount!)</span>
           </div>
         </div>
       </footer>

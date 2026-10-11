@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { COURSE_MODULES } from '../data/courseData';
+import { Language, translate } from '../utils/translations';
 import {
   isTelegramMiniApp,
   getTelegramUser,
@@ -12,7 +13,8 @@ import {
   TelegramWebAppUser,
   TelegramWidgetUser,
   TelegramAuthValidationResult,
-  ADMIN_TELEGRAM_HANDLE
+  ADMIN_TELEGRAM_HANDLE,
+  ADMIN_TELEGRAM_NORMALIZED
 } from '../utils/telegramAuth';
 
 export type NavTabType =
@@ -34,6 +36,10 @@ interface AppContextType {
   users: UserProfile[];
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  toggleLanguage: () => void;
+  t: (key: string, defaultText?: string) => string;
   adminApproveUser: (userId: string, days?: number) => void;
   adminRejectUser: (userId: string, reason?: string) => void;
   adminExtendUser: (userId: string, days?: number) => void;
@@ -80,6 +86,7 @@ interface AppContextType {
 const STORAGE_KEY_USERS = 'ethio_impex_users_v6';
 const STORAGE_KEY_CURRENT_USER = 'ethio_impex_curr_user_v6';
 const STORAGE_KEY_THEME = 'ethio_impex_theme';
+const STORAGE_KEY_LANGUAGE = 'ethio_impex_lang_v1';
 const STORAGE_KEY_QUIZ_SCORES = 'ethio_impex_quiz_scores_v6';
 const STORAGE_KEY_USER_QUIZZES = 'ethio_impex_user_quizzes_v6';
 
@@ -95,9 +102,9 @@ const saveLocal = (key: string, value: string) => {
   }
 };
 
-export const ADMIN_BOT_USER: UserProfile = {
-  id: 'admin-eximman-bot',
-  fullName: 'Eximman Admin',
+export const ADMIN_USER: UserProfile = {
+  id: 'admin-eximman-abdistad',
+  fullName: 'Abdulkerim (@EximmanAbdIstad)',
   telegramUsername: ADMIN_TELEGRAM_HANDLE,
   phoneNumber: '09 6768 4490',
   email: 'admin@eximmanlearn.et',
@@ -127,7 +134,7 @@ export const GUEST_STUDENT_USER: UserProfile = {
 const isSampleUserId = (id: string) =>
   ['student-01', 'student-02', 'student-03', 'student-04'].includes(id);
 
-const INITIAL_USERS: UserProfile[] = [ADMIN_BOT_USER];
+const INITIAL_USERS: UserProfile[] = [ADMIN_USER];
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -138,12 +145,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length) {
-          const cleanList = parsed.filter(u => !isSampleUserId(u.id));
-          const hasBotAdmin = cleanList.some(
+          const cleanList = parsed
+            .filter(u => !isSampleUserId(u.id) && u.id !== 'admin-eximman-bot')
+            .map(u => {
+              // Only @EximmanAbdIstad can be admin
+              if (u.role === 'admin' && normalizeTelegramUsername(u.telegramUsername) !== ADMIN_TELEGRAM_NORMALIZED) {
+                return { ...u, role: 'user' as const };
+              }
+              return u;
+            });
+          const hasAdmin = cleanList.some(
             u => isAdminTelegram(u.telegramUsername) && u.role === 'admin'
           );
-          if (!hasBotAdmin) {
-            return [ADMIN_BOT_USER, ...cleanList.filter(u => u.id !== 'admin-eximman-bot')];
+          if (!hasAdmin) {
+            return [ADMIN_USER, ...cleanList];
           }
           return cleanList.length ? cleanList : INITIAL_USERS;
         }
@@ -157,7 +172,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
-      if (stored && !isSampleUserId(stored)) return stored;
+      if (stored && !isSampleUserId(stored) && stored !== 'admin-eximman-bot') return stored;
     } catch (e) {
       console.error(e);
     }
@@ -172,6 +187,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error(e);
     }
     return 'light';
+  });
+
+  const [language, setLanguage] = useState<Language>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_LANGUAGE);
+      if (stored === 'en' || stored === 'am') return stored;
+    } catch (e) {
+      console.error(e);
+    }
+    return 'en';
   });
 
   const [activeNavTab, setActiveNavTab] = useState<NavTabType>('overview');
@@ -278,11 +303,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
+  useEffect(() => {
+    saveLocal(STORAGE_KEY_LANGUAGE, language);
+  }, [language]);
+
+  const toggleLanguage = () => {
+    setLanguage(prev => (prev === 'en' ? 'am' : 'en'));
+  };
+
+  const t = (key: string, defaultText?: string) => {
+    return translate(key, language, defaultText);
+  };
+
   const currentUser = users.find(u => u.id === currentUserId) || GUEST_STUDENT_USER;
   const quizScores = userQuizScores[currentUser.id] || {};
 
-  // @Eximmanlearnbot is designated administrator
-  const isAdmin = currentUser.role === 'admin' || isAdminTelegram(currentUser.telegramUsername);
+  // Only @EximmanAbdIstad is designated administrator
+  const isAdmin =
+    (currentUser.role === 'admin' && normalizeTelegramUsername(currentUser.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED) ||
+    isAdminTelegram(currentUser.telegramUsername);
 
   const isSubscriptionValid = () => {
     if (isAdmin) return true;
@@ -397,7 +436,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           telebirrTxId: data.telebirrTxId?.trim() || target.telebirrTxId,
           paymentScreenshot: data.paymentScreenshot,
           paymentAmount: 3900,
-          notes: `Telebirr 3,900 ETB payment submitted for @Eximmanlearnbot approval`
+          notes: `Telebirr 3,900 ETB payment submitted for @EximmanAbdIstad approval`
         };
         setCurrentUserId(target.id);
         return copy;
@@ -414,7 +453,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           telebirrTxId: data.telebirrTxId?.trim(),
           paymentScreenshot: data.paymentScreenshot,
           paymentAmount: 3900,
-          notes: `Telebirr 3,900 ETB payment submitted for @Eximmanlearnbot approval`,
+          notes: `Telebirr 3,900 ETB payment submitted for @EximmanAbdIstad approval`,
           completedChapters: []
         };
         setCurrentUserId(newUser.id);
@@ -464,7 +503,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (isAdminTelegram(formatted)) {
       loginAsAdmin();
-      return { success: true, message: 'Authenticated as Administrator (@Eximmanlearnbot)', role: 'admin' as const };
+      return { success: true, message: 'Authenticated as Administrator (@EximmanAbdIstad)', role: 'admin' as const };
     }
 
     const matched = users.find(
@@ -517,7 +556,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (val.role === 'admin') {
       loginAsAdmin();
-      return { success: true, message: 'Logged in as Administrator (@Eximmanlearnbot)', role: 'admin' as const };
+      return { success: true, message: 'Logged in as Administrator (@EximmanAbdIstad)', role: 'admin' as const };
     }
 
     if (val.status === 'user_matched' && val.user) {
@@ -545,7 +584,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             subscriptionStatus: 'active_paid',
             approvedAt: now.toISOString(),
             expiresAt: expiry.toISOString(),
-            notes: `Approved by @Eximmanlearnbot for ${days} days until ${expiry.toLocaleDateString()}`
+            notes: `Approved by @EximmanAbdIstad for ${days} days until ${expiry.toLocaleDateString()}`
           };
         }
         return u;
@@ -581,7 +620,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ...u,
             subscriptionStatus: 'active_paid',
             expiresAt: newExpiry.toISOString(),
-            notes: `Extended +${days} days by @Eximmanlearnbot until ${newExpiry.toLocaleDateString()}`
+            notes: `Extended +${days} days by @EximmanAbdIstad until ${newExpiry.toLocaleDateString()}`
           };
         }
         return u;
@@ -597,13 +636,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const loginAsAdmin = () => {
     setUsers(prev => {
-      const hasBot = prev.some(u => isAdminTelegram(u.telegramUsername));
-      if (!hasBot) {
-        return [ADMIN_BOT_USER, ...prev];
+      const hasAdmin = prev.some(u => normalizeTelegramUsername(u.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED);
+      if (!hasAdmin) {
+        return [ADMIN_USER, ...prev.filter(u => u.id !== 'admin-eximman-bot')];
       }
-      return prev;
+      return prev.map(u =>
+        normalizeTelegramUsername(u.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED
+          ? { ...u, role: 'admin' as const, subscriptionStatus: 'active_paid' as const }
+          : u
+      );
     });
-    setCurrentUserId('admin-eximman-bot');
+    setCurrentUserId('admin-eximman-abdistad');
     setActiveNavTab('admin');
   };
 
@@ -619,6 +662,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         users,
         theme,
         toggleTheme,
+        language,
+        setLanguage,
+        toggleLanguage,
+        t,
         adminApproveUser,
         adminRejectUser,
         adminExtendUser,

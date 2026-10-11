@@ -198,7 +198,7 @@ export const SubscriptionView: React.FC = () => {
         <div className="flex items-center gap-2">
           {isAdmin ? (
             <span className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold">
-              Administrator (@Eximmanlearnbot)
+              Administrator (@EximmanAbdIstad)
             </span>
           ) : currentUser.subscriptionStatus === 'active_paid' ? (
             <span className="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold flex items-center gap-1.5">
@@ -208,7 +208,7 @@ export const SubscriptionView: React.FC = () => {
           ) : currentUser.subscriptionStatus === 'pending_approval' ? (
             <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-bold flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5" />
-              <span>Pending @Eximmanlearnbot Approval</span>
+              <span>Pending @EximmanAbdIstad Approval</span>
             </span>
           ) : currentUser.subscriptionStatus === 'expired' ? (
             <span className="px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold flex items-center gap-1.5">
@@ -291,9 +291,12 @@ export const SubscriptionView: React.FC = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
                 Full Academy Pass
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-rose-600 text-white shadow-2xs">
+                Promotional 60% Discount!
               </span>
             </div>
 
@@ -302,23 +305,29 @@ export const SubscriptionView: React.FC = () => {
                 30-Day Complete Subscription
               </h3>
               <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-                Every subscription is valid for 30 days. When 30 days expire, you can subscribe again for 3,900 Birr per 30 days.
+                Every subscription is valid for 30 days. When 30 days expire, you can renew for 3,900 Birr (Promotional 60% Discount!).
               </p>
             </div>
 
-            <div className="flex items-baseline gap-1 text-neutral-900 dark:text-neutral-50">
+            <div className="flex flex-wrap items-baseline gap-2 text-neutral-900 dark:text-neutral-50">
               <span className="font-serif-title text-4xl font-extrabold text-amber-900 dark:text-amber-100">
                 3,900
               </span>
               <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
                 Birr / 30 Days
               </span>
+              <span className="text-sm text-neutral-400 line-through font-semibold">
+                9,750 Birr
+              </span>
+              <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
+                (Promotional 60% Discount!)
+              </span>
             </div>
 
             <ul className="space-y-2.5 text-xs text-neutral-700 dark:text-neutral-200 pt-2 border-t border-amber-200/60 dark:border-amber-900/40">
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span><strong>Fixed 30-Day Period:</strong> Full access for 30 days from approval date, with continuous renewal at 3,900 Birr</span>
+                <span><strong>Fixed 30-Day Period:</strong> Full access for 30 days from approval date, at promotional rate of 3,900 Birr (60% Discount!)</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -349,8 +358,8 @@ export const SubscriptionView: React.FC = () => {
               className="w-full py-3 px-4 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold text-center block transition-colors shadow-sm"
             >
               {currentUser.subscriptionStatus === 'expired'
-                ? 'Resubscribe for 3,900 Birr (30 Days)'
-                : 'Subscribe via telebirr (3,900 Birr / 30 Days)'}
+                ? 'Resubscribe for 3,900 Birr (Promotional 60% Discount!)'
+                : 'Subscribe via telebirr (3,900 Birr · Promotional 60% Discount!)'}
             </a>
           </div>
         </div>
@@ -364,10 +373,10 @@ export const SubscriptionView: React.FC = () => {
             <span>telebirr Payment Instructions</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-serif-title font-bold text-neutral-900 dark:text-neutral-50 mt-1">
-            Subscribe by telebirr Transfer (3,900 Birr)
+            Subscribe by telebirr Transfer (3,900 Birr · Promotional 60% Discount!)
           </h2>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-            Follow the 3 easy steps below to activate your 30-day full access.
+            Follow the 3 easy steps below to activate your 30-day full access at the promotional discount rate.
           </p>
         </div>
 
@@ -383,10 +392,10 @@ export const SubscriptionView: React.FC = () => {
               </span>
             </div>
             <p className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-              Transfer 3,900 Birr
+              Transfer 3,900 Birr <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">(60% Off)</span>
             </p>
             <p className="text-neutral-500 leading-relaxed text-[11px]">
-              Open your telebirr mobile app or dial *127# and send 3,900 ETB.
+              Open your telebirr mobile app or dial *127# and send 3,900 ETB (promotional 60% discount applied).
             </p>
           </div>
 
@@ -427,7 +436,7 @@ export const SubscriptionView: React.FC = () => {
               Admin Approval
             </p>
             <p className="text-neutral-500 leading-relaxed text-[11px]">
-              Upload the screenshot below. Administrator <strong>@Eximmanlearnbot</strong> approves your access.
+              Upload the screenshot below. Administrator <strong>@EximmanAbdIstad</strong> approves your access.
             </p>
           </div>
         </div>
@@ -445,7 +454,7 @@ export const SubscriptionView: React.FC = () => {
                 <span>Payment Request Pending Approval</span>
               </div>
               <p className="text-emerald-900/90 dark:text-emerald-200/90 leading-relaxed">
-                Your payment submission of <strong>3,900 ETB</strong> via telebirr to <strong>09 6768 4490 (Abdulkerim)</strong> is recorded. Administrator <strong>@Eximmanlearnbot</strong> will review your screenshot and activate your 30-day full access.
+                Your payment submission of <strong>3,900 ETB</strong> via telebirr to <strong>09 6768 4490 (Abdulkerim)</strong> is recorded. Administrator <strong>@EximmanAbdIstad</strong> will review your screenshot and activate your 30-day full access.
               </p>
               <div className="flex items-center gap-3 pt-1">
                 <button
@@ -468,7 +477,7 @@ export const SubscriptionView: React.FC = () => {
             )}
 
             {/* Quick Telegram Account Linking Widget */}
-            {!currentUser.telegramUsername || currentUser.telegramUsername === '@Eximmanlearnbot' ? (
+            {!currentUser.telegramUsername || currentUser.telegramUsername === '@EximmanAbdIstad' ? (
               <div className="p-4 bg-sky-50/70 dark:bg-sky-950/20 border border-sky-200/80 dark:border-sky-900/40 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-sky-900 dark:text-sky-200 flex items-center gap-1.5">
@@ -639,8 +648,8 @@ export const SubscriptionView: React.FC = () => {
                 <ShieldCheck className="h-4 w-4" />
                 <span>
                   {currentUser.subscriptionStatus === 'expired'
-                    ? 'Submit 30-Day Resubscription Request (3,900 Birr)'
-                    : 'Submit 30-Day Subscription Request (3,900 Birr)'}
+                    ? 'Submit 30-Day Resubscription Request (3,900 Birr · 60% Off)'
+                    : 'Submit 30-Day Subscription Request (3,900 Birr · Promotional 60% Discount!)'}
                 </span>
               </button>
               <button

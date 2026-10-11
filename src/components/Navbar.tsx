@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import type { NavTabType } from '../context/AppContext';
+import { isAdminTelegram } from '../utils/telegramAuth';
 import {
   Award,
   BookOpen,
@@ -23,7 +24,8 @@ import {
   Send,
   User,
   Plus,
-  LogOut
+  LogOut,
+  Languages
 } from 'lucide-react';
 
 type NavItem = {
@@ -76,6 +78,9 @@ export const Navbar: React.FC = () => {
     setActiveNavTab,
     theme,
     toggleTheme,
+    language,
+    toggleLanguage,
+    t,
     currentUser,
     users,
     switchUser,
@@ -89,11 +94,42 @@ export const Navbar: React.FC = () => {
     telegramWebAppUser
   } = useApp();
 
+  const getNavLabel = (id: string, defaultLabel: string) => {
+    if (language !== 'am') return defaultLabel;
+    switch (id) {
+      case 'overview': return 'አጠቃላይ';
+      case 'curriculum': return 'ሥርዓተ ትምህርት';
+      case 'quiz_center': return 'ፈተናዎች';
+      case 'progress': return 'ሂደት';
+      case 'certificate': return 'ምስክር ወረቀት';
+      case 'landed_cost': return 'የዕቃ ጠቅላላ ወጪ';
+      case 'lc_calculator': return 'የኤል ሲ ስሌት';
+      case 'tax_calculator': return 'የጉምሩክ ታክስ';
+      case 'incoterms_guide': return 'የኢንኮተርምስ መመሪያ';
+      case 'resources': return 'ሰነዶችና ሕጎች';
+      case 'subscription': return 'የአባልነት ዕቅድ';
+      case 'admin': return 'የአስተዳዳሪ ማዕከል';
+      default: return defaultLabel;
+    }
+  };
+
+  const getSectionLabel = (label: string) => {
+    if (language !== 'am') return label;
+    if (label === 'Learning') return 'ትምህርት';
+    if (label === 'Trade tools') return 'የንግድ ማስያዎች';
+    if (label === 'Reference') return 'ዋቢ ሰነዶች';
+    return label;
+  };
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [telegramLoginInput, setTelegramLoginInput] = useState('');
   const [showTelegramForm, setShowTelegramForm] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const isUserAdminAuthorized =
+    isAdminTelegram(currentUser.telegramUsername) ||
+    (Boolean(telegramWebAppUser?.username) && isAdminTelegram(telegramWebAppUser?.username || ''));
 
   useEffect(() => {
     if (!userDropdownOpen) return;
@@ -135,6 +171,7 @@ export const Navbar: React.FC = () => {
   const renderNavItem = (item: NavItem, mobile = false) => {
     const Icon = item.icon;
     const active = activeNavTab === item.id;
+    const itemLabel = getNavLabel(item.id, item.label);
     return (
       <button
         key={item.id}
@@ -154,10 +191,10 @@ export const Navbar: React.FC = () => {
             active ? 'text-[#176b60] dark:text-[#8bc9b8]' : ''
           }`}
         />
-        <span>{item.label}</span>
+        <span>{itemLabel}</span>
         {active && mobile && (
           <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-[#176b60] dark:text-[#8bc9b8]">
-            Active
+            {language === 'am' ? 'ገባሪ' : 'Active'}
           </span>
         )}
       </button>
@@ -165,11 +202,11 @@ export const Navbar: React.FC = () => {
   };
 
   const getUserBadgeText = () => {
-    if (isAdmin) return 'Admin (@Eximmanlearnbot)';
-    if (currentUser.subscriptionStatus === 'active_paid') return 'Subscriber (Paid)';
-    if (currentUser.subscriptionStatus === 'pending_approval') return 'Pending Approval';
-    if (currentUser.subscriptionStatus === 'expired') return 'Expired (Renew 3,900 ETB)';
-    return 'Free Trial (Ch 1 & 2)';
+    if (isAdmin) return language === 'am' ? 'አስተዳዳሪ (@EximmanAbdIstad)' : 'Admin (@EximmanAbdIstad)';
+    if (currentUser.subscriptionStatus === 'active_paid') return language === 'am' ? 'የተመዘገበ አባል (የከፈለ)' : 'Subscriber (Paid)';
+    if (currentUser.subscriptionStatus === 'pending_approval') return language === 'am' ? 'በማረጋገጥ ላይ' : 'Pending Approval';
+    if (currentUser.subscriptionStatus === 'expired') return language === 'am' ? 'ያለቀበት (በ3,900 ብር ያድሱ)' : 'Expired (Renew 3,900 ETB)';
+    return language === 'am' ? 'ነፃ ሙከራ (ምዕራፍ 1 እና 2)' : 'Free Trial (Ch 1 & 2)';
   };
 
   return (
@@ -187,11 +224,10 @@ export const Navbar: React.FC = () => {
             </span>
             <span className="min-w-0">
               <span className="block truncate font-serif-title text-[12px] xs:text-[13.5px] sm:text-base font-extrabold tracking-[-.035em]">
-                <span className="hidden sm:inline">Export-Import Logistics Academy</span>
-                <span className="sm:hidden">Export-Import Logistics Academy</span>
+                {language === 'am' ? 'የላኪና አስመጪ ሎጂስቲክስ አካዳሚ' : 'Export-Import Logistics Academy'}
               </span>
               <span className="mt-0.5 hidden xs:block text-[8.5px] sm:text-[9px] font-bold uppercase tracking-[.15em] academy-muted truncate">
-                Professional Trade Education
+                {language === 'am' ? 'የውጭ ንግድና ሎጂስቲክስ ሙያዊ ሥልጠና' : 'Professional Trade Education'}
               </span>
             </span>
           </button>
@@ -204,7 +240,7 @@ export const Navbar: React.FC = () => {
                 className="flex items-center gap-0.5 border-r pr-1.5 xl:pr-2 academy-line last:border-0 last:pr-0"
               >
                 <span className="mr-1 hidden 2xl:block text-[9px] font-bold uppercase tracking-[.12em] academy-muted">
-                  {section.label}
+                  {getSectionLabel(section.label)}
                 </span>
                 {section.items.map(item => renderNavItem(item))}
               </div>
@@ -263,11 +299,49 @@ export const Navbar: React.FC = () => {
               >
                 <span>
                   {currentUser.subscriptionStatus === 'expired'
-                    ? 'Renew (3,900 ETB)'
-                    : 'Subscribe (3,900 ETB)'}
+                    ? 'Renew (3,900 ETB · 60% Off)'
+                    : 'Subscribe (3,900 ETB · 60% Off)'}
                 </span>
               </button>
             )}
+
+            {/* Amharic - English Language Switcher Button */}
+            <div
+              role="group"
+              aria-label="Language selection"
+              className="inline-flex items-center p-0.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100/90 dark:bg-neutral-800/90 shrink-0 shadow-2xs"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  if (language !== 'am') toggleLanguage();
+                }}
+                className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
+                  language === 'am'
+                    ? 'bg-amber-700 text-white shadow-xs'
+                    : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60'
+                }`}
+                title="ወደ አማርኛ ቋንቋ ቀይር (Switch to Amharic)"
+                aria-pressed={language === 'am'}
+              >
+                <span>አማርኛ</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (language !== 'en') toggleLanguage();
+                }}
+                className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
+                  language === 'en'
+                    ? 'bg-amber-700 text-white shadow-xs'
+                    : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60'
+                }`}
+                title="Switch to English"
+                aria-pressed={language === 'en'}
+              >
+                <span>English</span>
+              </button>
+            </div>
 
             {/* User Dropdown */}
             <div className="relative" ref={userMenuRef}>
@@ -415,17 +489,32 @@ export const Navbar: React.FC = () => {
                         <span>Sign In with Handle</span>
                       </button>
 
-                      {!isAdmin && (
+                      {/* Only @EximmanAbdIstad is allowed to get or see this button. Other telegram users are not allowed. */}
+                      {isUserAdminAuthorized && !isAdmin && (
                         <button
                           role="menuitem"
                           onClick={() => {
                             loginAsAdmin();
                             setUserDropdownOpen(false);
                           }}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#176b60] hover:bg-[#e6f1ed] dark:text-[#b5dfd2] dark:hover:bg-[#26312d]"
+                        >
+                          <Shield className="h-3.5 w-3.5" />
+                          <span>Login as Admin (@EximmanAbdIstad)</span>
+                        </button>
+                      )}
+
+                      {isAdmin && (
+                        <button
+                          role="menuitem"
+                          onClick={() => {
+                            navigate('admin');
+                            setUserDropdownOpen(false);
+                          }}
                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#176b60] hover:bg-[#e6f1ed] dark:text-[#b5dfd2] dark:hover:bg-[#263a35]"
                         >
                           <Shield className="h-3.5 w-3.5" />
-                          <span>Login as Admin (@Eximmanlearnbot)</span>
+                          <span>Admin Dashboard (@EximmanAbdIstad)</span>
                         </button>
                       )}
 
@@ -435,7 +524,24 @@ export const Navbar: React.FC = () => {
                         className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-[#eff3ee] dark:hover:bg-[#26312d]"
                       >
                         <CreditCard className="h-3.5 w-3.5 text-neutral-500" />
-                        <span>Subscription Plans (3,900 ETB)</span>
+                        <span>{language === 'am' ? 'የአባልነት ዕቅዶች (3,900 ብር)' : 'Subscription Plans (3,900 ETB · 60% Off)'}</span>
+                      </button>
+
+                      <button
+                        role="menuitem"
+                        onClick={() => {
+                          toggleLanguage();
+                          setUserDropdownOpen(false);
+                        }}
+                        className="flex items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-[#eff3ee] dark:hover:bg-[#26312d]"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Languages className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
+                          <span>{language === 'am' ? 'ቋንቋ፦ አማርኛ' : 'Language: English'}</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                          {language === 'am' ? 'Switch to EN' : 'ቀይር ወደ አማርኛ'}
+                        </span>
                       </button>
 
                       {currentUser.id !== 'guest-student' && (
@@ -515,16 +621,49 @@ export const Navbar: React.FC = () => {
               </section>
               <section>
                 <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-[.15em] academy-muted">
-                  Membership
+                  {language === 'am' ? 'የአባልነት ዕቅድ' : 'Membership'}
                 </p>
                 {renderNavItem({ id: 'subscription', label: 'Subscription Plans (3,900 ETB)', icon: CreditCard }, true)}
+              </section>
+              <section>
+                <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-[.15em] academy-muted">
+                  {language === 'am' ? 'ቋንቋ ምረጡ (Select Language)' : 'Language (ቋንቋ)'}
+                </p>
+                <div className="flex items-center gap-2 px-3 py-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (language !== 'en') toggleLanguage();
+                    }}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border ${
+                      language === 'en'
+                        ? 'bg-amber-700 text-white border-amber-700 shadow-2xs'
+                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700'
+                    }`}
+                  >
+                    English
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (language !== 'am') toggleLanguage();
+                    }}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border ${
+                      language === 'am'
+                        ? 'bg-amber-700 text-white border-amber-700 shadow-2xs'
+                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700'
+                    }`}
+                  >
+                    አማርኛ (Amharic)
+                  </button>
+                </div>
               </section>
               {isAdmin && (
                 <section>
                   <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-[.15em] academy-muted">
                     Administration
                   </p>
-                  {renderNavItem({ id: 'admin', label: 'Admin Dashboard (@Eximmanlearnbot)', icon: Shield }, true)}
+                  {renderNavItem({ id: 'admin', label: 'Admin Dashboard (@EximmanAbdIstad)', icon: Shield }, true)}
                 </section>
               )}
             </div>

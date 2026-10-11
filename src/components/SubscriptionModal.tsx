@@ -196,8 +196,8 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
             </h2>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
               {currentUser.subscriptionStatus === 'expired'
-                ? 'Every subscription is valid for 30 days. Renew your access for 3,900 Birr to continue accessing all lessons, tools, and certification.'
-                : 'Every subscription is for 30 days (3,900 Birr per 30 days). Get full access to all lessons, calculation sheets, checklists, and verified certification.'}
+                ? 'Every subscription is valid for 30 days. Renew your access for 3,900 Birr (Promotional 60% Discount!) to continue accessing all lessons, tools, and certification.'
+                : 'Every subscription is for 30 days (3,900 Birr per 30 days · Promotional 60% Discount!). Get full access to all lessons, calculation sheets, checklists, and verified certification.'}
             </p>
           </div>
           <button
@@ -227,9 +227,17 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
             </div>
             <div className="text-right">
-              <span className="text-xl font-serif-title font-extrabold text-amber-900 dark:text-amber-100">
-                3,900 ETB
+              <span className="inline-block text-[10px] font-extrabold uppercase tracking-wide text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-900/40">
+                Promotional 60% Discount!
               </span>
+              <div className="flex items-baseline justify-end gap-1.5 mt-0.5">
+                <span className="text-xs text-neutral-400 line-through font-semibold">
+                  9,750 ETB
+                </span>
+                <span className="text-xl font-serif-title font-extrabold text-amber-900 dark:text-amber-100">
+                  3,900 ETB
+                </span>
+              </div>
               <span className="block text-[10px] font-semibold text-amber-700 dark:text-amber-300">
                 30-day access
               </span>
@@ -278,7 +286,7 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-2 text-[11px] text-amber-800 dark:text-amber-300">
             <ShieldCheck className="h-4 w-4 text-amber-600 shrink-0" />
             <span>
-              Approvals are reviewed by administrator <strong>@Eximmanlearnbot</strong>.
+              Approvals are reviewed by administrator <strong>@EximmanAbdIstad</strong>.
             </span>
           </div>
         </div>
@@ -291,7 +299,7 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <span>Subscription Request Submitted!</span>
             </div>
             <p className="text-emerald-900/90 dark:text-emerald-200/90 leading-relaxed">
-              Your payment receipt of <strong>3,900 ETB</strong> has been sent to <strong>@Eximmanlearnbot</strong> (Abdulkerim). Once verified, your full 30-day access will be approved.
+              Your payment receipt of <strong>3,900 ETB</strong> has been sent to <strong>@EximmanAbdIstad</strong> (Abdulkerim). Once verified, your full 30-day access will be approved.
             </p>
             <div className="pt-2 flex items-center justify-between">
               <button
@@ -323,7 +331,7 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
             )}
 
             {/* Quick Telegram Account Linking Widget */}
-            {!currentUser.telegramUsername || currentUser.telegramUsername === '@Eximmanlearnbot' ? (
+            {!currentUser.telegramUsername || currentUser.telegramUsername === '@EximmanAbdIstad' ? (
               <div className="p-3.5 bg-sky-50/70 dark:bg-sky-950/20 border border-sky-200/80 dark:border-sky-900/40 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-sky-900 dark:text-sky-200 flex items-center gap-1.5">
@@ -503,8 +511,8 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <ShieldCheck className="h-4 w-4" />
                 <span>
                   {currentUser.subscriptionStatus === 'expired'
-                    ? 'Resubscribe for 3,900 Birr (30 Days Access)'
-                    : 'Submit Subscription for Admin Approval (3,900 ETB / 30 Days)'}
+                    ? 'Resubscribe for 3,900 Birr (Promotional 60% Discount!)'
+                    : 'Submit Subscription for Approval (3,900 ETB · Promotional 60% Discount!)'}
                 </span>
               </button>
 

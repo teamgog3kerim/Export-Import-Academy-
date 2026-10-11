@@ -23,12 +23,14 @@ import {
   ClipboardCheck
 } from 'lucide-react';
 import { ExportDocumentChecklistGenerator } from './ExportDocumentChecklistGenerator';
+import { MODULE_TRANSLATIONS, CHAPTER_TRANSLATIONS } from '../utils/translations';
 
 
 export const CourseViewer: React.FC = () => {
   const {
     currentUser,
     hasFullAccess,
+    language,
     selectedChapterId,
     setSelectedChapterId,
     setShowPaywallModal,
@@ -92,14 +94,14 @@ export const CourseViewer: React.FC = () => {
           <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
-                Course Syllabus
+                {language === 'am' ? 'የስልጠና ማውጫ' : 'Course Syllabus'}
               </span>
               <h2 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                Ethiopia Import & Export Academy
+                {language === 'am' ? 'የኢትዮጵያ ወጪና ገቢ ንግድ አካዳሚ' : 'Ethiopia Import & Export Academy'}
               </h2>
             </div>
             <span className="text-xs font-mono font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded">
-              16 Chapters
+              {language === 'am' ? '16 ምዕራፎች' : '16 Chapters'}
             </span>
           </div>
 
@@ -107,7 +109,9 @@ export const CourseViewer: React.FC = () => {
           <div className="my-3 p-3 bg-neutral-50 dark:bg-neutral-800/60 rounded-xl border border-neutral-200/60 dark:border-neutral-700/60 space-y-2">
             <div className="flex items-center justify-between text-[11px]">
               <span className="font-bold text-neutral-700 dark:text-neutral-300">
-                Progress: {completedChaptersCount}/16 Chapters
+                {language === 'am'
+                  ? `የትምህርት ሂደት፦ ${completedChaptersCount}/16 ምዕራፎች`
+                  : `Progress: ${completedChaptersCount}/16 Chapters`}
               </span>
               <span className="font-mono font-bold text-amber-700 dark:text-amber-400">
                 {progressPercentage}%
@@ -124,14 +128,14 @@ export const CourseViewer: React.FC = () => {
                 onClick={() => setActiveNavTab('progress')}
                 className="text-neutral-600 dark:text-neutral-400 hover:text-amber-700 dark:hover:text-amber-400 flex items-center gap-1"
               >
-                <span>Records Tracker</span>
+                <span>{language === 'am' ? 'የትምህርት ሂደት መዝገብ' : 'Records Tracker'}</span>
                 <ArrowRight className="w-2.5 h-2.5" />
               </button>
               <button
                 onClick={() => setActiveNavTab('certificate')}
                 className="text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
               >
-                <span>Certification</span>
+                <span>{language === 'am' ? 'የምስክር ወረቀት' : 'Certification'}</span>
                 <Award className="w-2.5 h-2.5" />
               </button>
             </div>
@@ -150,12 +154,12 @@ export const CourseViewer: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <ClipboardCheck className={`w-4 h-4 ${activeTab === 'checklist' ? 'text-white' : 'text-amber-700 dark:text-amber-400'}`} />
-              <span>Export Checklist Tool</span>
+              <span>{language === 'am' ? 'የወጪ ንግድ ሰነዶች ማረጋገጫ' : 'Export Checklist Tool'}</span>
             </div>
             <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
               activeTab === 'checklist' ? 'bg-white/20 text-white' : 'bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100'
             }`}>
-              Tool
+              {language === 'am' ? 'መሳሪያ' : 'Tool'}
             </span>
           </button>
 
@@ -164,6 +168,7 @@ export const CourseViewer: React.FC = () => {
             {COURSE_MODULES.map(mod => {
               const isCollapsed = collapsedModules[mod.id];
               const isCurrentMod = mod.id === currentModule.id;
+              const modTitle = MODULE_TRANSLATIONS[mod.id]?.title[language] || mod.title;
 
               return (
                 <div key={mod.id} className="border border-neutral-200/70 dark:border-neutral-800 rounded-xl overflow-hidden">
@@ -177,10 +182,10 @@ export const CourseViewer: React.FC = () => {
                   >
                     <div className="pr-2">
                       <div className="text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400 font-bold">
-                        Module {mod.moduleNumber}
+                        {language === 'am' ? `ሞጁል ${mod.moduleNumber}` : `Module ${mod.moduleNumber}`}
                       </div>
                       <div className="text-xs text-neutral-800 dark:text-neutral-200 font-medium line-clamp-1">
-                        {mod.title}
+                        {modTitle}
                       </div>
                     </div>
                     {isCollapsed ? (
@@ -195,6 +200,7 @@ export const CourseViewer: React.FC = () => {
                       {mod.chapters.map(ch => {
                         const isSelected = ch.id === currentChapter.id;
                         const chLocked = !hasFullAccess && !ch.isFreeTrialAccessible;
+                        const chTitle = CHAPTER_TRANSLATIONS[ch.id]?.title[language] || ch.title;
 
                         return (
                           <button
@@ -212,9 +218,9 @@ export const CourseViewer: React.FC = () => {
                           >
                             <div className="flex items-center gap-2 pr-2">
                               <span className="font-mono text-[10px] opacity-75">
-                                Ch {ch.chapterNumber}
+                                {language === 'am' ? `ምዕራፍ ${ch.chapterNumber}` : `Ch ${ch.chapterNumber}`}
                               </span>
-                              <span className="line-clamp-1">{ch.title}</span>
+                              <span className="line-clamp-1">{chTitle}</span>
                             </div>
 
                             <div className="shrink-0 flex items-center gap-1.5">
@@ -222,7 +228,7 @@ export const CourseViewer: React.FC = () => {
                                 <span className={`text-[10px] px-1.5 py-0.2 rounded font-sans ${
                                   isSelected ? 'bg-white/20 text-white' : 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50'
                                 }`}>
-                                  Free
+                                  {language === 'am' ? 'ነፃ' : 'Free'}
                                 </span>
                               ) : chLocked ? (
                                 <Lock className="w-3.5 h-3.5 text-neutral-400" />
@@ -252,13 +258,13 @@ export const CourseViewer: React.FC = () => {
               Unlock Chapters 3 through 16
             </h3>
             <p className="text-xs text-neutral-300 leading-relaxed">
-              You are currently on the Free Trial (Chapters 1 & 2). Subscribe for 3,900 Birr via telebirr to 09 6768 4490 (Abdulkerim) to unlock all 16 chapters, trade calculation tools, and verified course certification.
+              You are currently on the Free Trial (Chapters 1 & 2). Subscribe for 3,900 Birr (Promotional 60% Discount!) via telebirr to 09 6768 4490 (Abdulkerim) to unlock all 16 chapters, trade calculation tools, and verified course certification.
             </p>
             <button
               onClick={() => setShowPaywallModal(true)}
               className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold rounded-xl transition-colors shadow-xs"
             >
-              Subscribe Now (3,900 ETB via telebirr)
+              Subscribe Now (3,900 ETB · 60% Discount!)
             </button>
           </div>
         )}
@@ -294,30 +300,34 @@ export const CourseViewer: React.FC = () => {
                     isChapterCompleted(currentChapter.id) ? 'text-emerald-600' : 'text-neutral-400'
                   }`}
                 />
-                <span>{isChapterCompleted(currentChapter.id) ? 'Completed ✓' : 'Mark Complete'}</span>
+                <span>
+                  {isChapterCompleted(currentChapter.id)
+                    ? (language === 'am' ? 'ተጠናቋል ✓' : 'Completed ✓')
+                    : (language === 'am' ? 'እንደተጠናቀቀ ምልክት አድርግ' : 'Mark Complete')}
+                </span>
               </button>
 
               <button
                 onClick={() => setActiveNavTab('resources')}
                 className="px-2.5 py-1 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-amber-700 dark:hover:text-amber-400 border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
               >
-                Glossary & Resources
+                {language === 'am' ? 'መፍቻና ተጨማሪ ሰነዶች' : 'Glossary & Resources'}
               </button>
 
               {currentChapter.isFreeTrialAccessible ? (
                 <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                  Free Trial Chapter
+                  {language === 'am' ? 'ነፃ የሙከራ ምዕራፍ' : 'Free Trial Chapter'}
                 </span>
               ) : (
                 <span className="text-xs font-medium text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-                  Paid Academy Chapter
+                  {language === 'am' ? 'የተከፈለበት የአካዳሚ ምዕራፍ' : 'Paid Academy Chapter'}
                 </span>
               )}
             </div>
           </div>
 
           <h1 className="text-2xl md:text-3xl font-serif-title font-bold text-neutral-900 dark:text-neutral-50 mt-3">
-            {currentChapter.title}
+            {CHAPTER_TRANSLATIONS[currentChapter.id]?.title[language] || currentChapter.title}
           </h1>
           <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">
             {currentChapter.description}
@@ -327,20 +337,24 @@ export const CourseViewer: React.FC = () => {
             <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-emerald-900/10 via-emerald-800/5 to-transparent border border-emerald-300 dark:border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
               <div>
                 <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block">
-                  Interactive Practice Tool
+                  {language === 'am' ? 'ተግባራዊ የመለማመጃ መሳሪያ' : 'Interactive Practice Tool'}
                 </span>
                 <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                  Incoterms® 2020 Interactive Stage & Responsibility Guide
+                  {language === 'am'
+                    ? 'የኢንኮተርምስ® 2020 መስተጋብራዊ የኃላፊነትና ወጪ መመሪያ'
+                    : 'Incoterms® 2020 Interactive Stage & Responsibility Guide'}
                 </p>
                 <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
-                  Inspect visual cost and risk division across 11 corridor stages, run dispute case studies, and use the decision wizard.
+                  {language === 'am'
+                    ? 'በ11ዱ የኢትዮጵያ ንግድ ኮሪደር ደረጃዎች የወጪና የስጋት ድልድልን ይመርምሩ፣ የክርክር ጉዳዮችን ይፍቱ።'
+                    : 'Inspect visual cost and risk division across 11 corridor stages, run dispute case studies, and use the decision wizard.'}
                 </p>
               </div>
               <button
                 onClick={() => setActiveNavTab('incoterms_guide')}
                 className="shrink-0 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
               >
-                Launch Incoterms Guide <ArrowRight className="w-3.5 h-3.5" />
+                {language === 'am' ? 'የኢንኮተርምስ መመሪያን ክፈት' : 'Launch Incoterms Guide'} <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
@@ -357,7 +371,7 @@ export const CourseViewer: React.FC = () => {
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>Study Guide & Rules</span>
+                <span>{language === 'am' ? 'የጥናት መመሪያና ደንቦች' : 'Study Guide & Rules'}</span>
               </button>
 
               <button
@@ -369,7 +383,7 @@ export const CourseViewer: React.FC = () => {
                 }`}
               >
                 <Anchor className="w-3.5 h-3.5" />
-                <span>Visual Process Diagram</span>
+                <span>{language === 'am' ? 'የሂደት ዲያግራም' : 'Visual Process Diagram'}</span>
               </button>
 
               {currentChapter.caseStudy && (
@@ -382,7 +396,7 @@ export const CourseViewer: React.FC = () => {
                   }`}
                 >
                   <Briefcase className="w-3.5 h-3.5" />
-                  <span>Real Ethiopian Case Study</span>
+                  <span>{language === 'am' ? 'የኢትዮጵያ ተግባራዊ ጥናት' : 'Real Ethiopian Case Study'}</span>
                 </button>
               )}
 
@@ -395,7 +409,11 @@ export const CourseViewer: React.FC = () => {
                 }`}
               >
                 <HelpCircle className="w-3.5 h-3.5" />
-                <span>Interactive Quiz ({currentChapter.quiz.length} Qs)</span>
+                <span>
+                  {language === 'am'
+                    ? `የዕውቀት መመዘኛ ፈተና (${currentChapter.quiz.length} ጥያቄዎች)`
+                    : `Interactive Quiz (${currentChapter.quiz.length} Qs)`}
+                </span>
               </button>
 
               <button
@@ -407,7 +425,7 @@ export const CourseViewer: React.FC = () => {
                 }`}
               >
                 <ClipboardCheck className="w-3.5 h-3.5" />
-                <span>Document Checklist Generator</span>
+                <span>{language === 'am' ? 'የሰነዶች ማረጋገጫ ዝርዝር' : 'Document Checklist Generator'}</span>
               </button>
             </div>
           )}
@@ -421,25 +439,38 @@ export const CourseViewer: React.FC = () => {
             </div>
             <div>
               <span className="text-xs uppercase font-bold tracking-wider text-amber-700 dark:text-amber-400">
-                {currentUser.subscriptionStatus === 'expired' ? 'Subscription Expired' : 'Subscription Required'}
+                {currentUser.subscriptionStatus === 'expired'
+                  ? (language === 'am' ? 'የአባልነት ጊዜ አልቋል' : 'Subscription Expired')
+                  : (language === 'am' ? 'የአባልነት ምዝገባ ያስፈልጋል' : 'Subscription Required')}
               </span>
               <h2 className="text-2xl font-serif-title font-bold text-neutral-900 dark:text-neutral-100 mt-1">
                 {currentUser.subscriptionStatus === 'expired'
-                  ? 'Your 30-Day Subscription Has Expired'
-                  : `Chapter ${currentChapter.chapterNumber} is locked in Free Trial`}
+                  ? (language === 'am' ? 'የ30 ቀናት የአባልነት ጊዜዎ አልቋል' : 'Your 30-Day Subscription Has Expired')
+                  : (language === 'am'
+                      ? `ምዕራፍ ${currentChapter.chapterNumber} በነፃ ሙከራ የተቆለፈ ነው`
+                      : `Chapter ${currentChapter.chapterNumber} is locked in Free Trial`)}
               </h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 max-w-lg mx-auto mt-2">
                 {currentUser.subscriptionStatus === 'expired'
-                  ? 'Your previous 30-day access period has ended. Renew your subscription for 3,900 Birr per 30 days via telebirr to 09 6768 4490 (Abdulkerim) to regain access to all chapters and practical tools.'
-                  : `Chapters 1 and 2 are free to study. To unlock Chapter ${currentChapter.chapterNumber} through Chapter 16 and access the full academy tools, please subscribe for 3,900 Birr per 30 days via telebirr to 09 6768 4490 (Abdulkerim).`}
+                  ? (language === 'am'
+                      ? 'የቀደመው የ30 ቀናት መዳረሻዎ አብቅቷል። ሁሉንም 16 ምዕራፎችና የምስክር ወረቀት ለማግኘት በቴሌብር 3,900 ብር (ልዩ የ60% ቅናሽ!) ወደ 09 6768 4490 (አብዱልከሪም) በመላክ ያድሱ።'
+                      : 'Your previous 30-day access period has ended. Renew your subscription for 3,900 Birr (Promotional 60% Discount!) per 30 days via telebirr to 09 6768 4490 (Abdulkerim) to regain access to all chapters and practical tools.')
+                  : (language === 'am'
+                      ? `ምዕራፍ 1 እና 2 በነፃ ማጥናት ይችላሉ። ከምዕራፍ ${currentChapter.chapterNumber} እስከ 16 ያሉትን ሁሉንም ትምህርቶች ለመክፈት በቴሌብር 3,900 ብር (ልዩ የ60% ቅናሽ!) ወደ 09 6768 4490 (አብዱልከሪም) በመላክ ይመዝገቡ።`
+                      : `Chapters 1 and 2 are free to study. To unlock Chapter ${currentChapter.chapterNumber} through Chapter 16 and access the full academy tools, please subscribe for 3,900 Birr (Promotional 60% Discount!) per 30 days via telebirr to 09 6768 4490 (Abdulkerim).`)}
               </p>
             </div>
 
             <div className="bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-xl max-w-md mx-auto text-left text-xs space-y-2.5 border border-neutral-200 dark:border-neutral-700">
-              <div className="font-bold text-neutral-800 dark:text-neutral-200">
-                {currentUser.subscriptionStatus === 'expired'
-                  ? 'Renew for 3,900 ETB to restore 30-Day Full Access:'
-                  : 'What you unlock with 30-Day Subscription (3,900 ETB):'}
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-neutral-800 dark:text-neutral-200">
+                  {currentUser.subscriptionStatus === 'expired'
+                    ? 'Renew for 3,900 ETB Full Access:'
+                    : 'What you unlock with 30-Day Subscription:'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-600 text-white">
+                  60% Off Promo!
+                </span>
               </div>
               <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -458,7 +489,7 @@ export const CourseViewer: React.FC = () => {
                 <span>Verified Academy Certificate issued in your name</span>
               </div>
               <div className="pt-2 border-t border-neutral-200 dark:border-neutral-700 text-[11px] text-amber-800 dark:text-amber-300">
-                telebirr transfer: <strong>09 6768 4490 (Abdulkerim)</strong> · Approved by <strong>@Eximmanlearnbot</strong>
+                telebirr transfer: <strong>09 6768 4490 (Abdulkerim)</strong> · Approved by <strong>@EximmanAbdIstad</strong>
               </div>
             </div>
 
@@ -467,8 +498,8 @@ export const CourseViewer: React.FC = () => {
               className="px-6 py-3 bg-amber-700 hover:bg-amber-800 text-white font-bold text-sm rounded-xl transition-colors shadow-sm"
             >
               {currentUser.subscriptionStatus === 'expired'
-                ? 'Resubscribe for 3,900 ETB (30 Days Access)'
-                : 'Subscribe via telebirr (3,900 ETB / 30 Days)'}
+                ? 'Resubscribe for 3,900 ETB (Promotional 60% Discount!)'
+                : 'Subscribe via telebirr (3,900 ETB · Promotional 60% Discount!)'}
             </button>
           </div>
         ) : (

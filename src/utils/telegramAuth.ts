@@ -107,8 +107,8 @@ declare global {
   }
 }
 
-export const ADMIN_TELEGRAM_HANDLE = '@Eximmanlearnbot';
-export const ADMIN_TELEGRAM_NORMALIZED = 'eximmanlearnbot';
+export const ADMIN_TELEGRAM_HANDLE = '@EximmanAbdIstad';
+export const ADMIN_TELEGRAM_NORMALIZED = 'eximmanabdistad';
 export const TELEGRAM_BOT_TOKEN = '8569973222:AAGLyuItmHoanxh-5P6L8eQf40TDQJxOYsk';
 export const TELEGRAM_BOT_USERNAME = 'Eximmanlearnbot';
 export const TELEGRAM_BOT_ID = '8569973222';
@@ -307,7 +307,7 @@ export function formatTelegramHandle(username: string): string {
 }
 
 /**
- * Checks if a given username matches the designated admin (@Eximmanlearnbot)
+ * Checks if a given username matches the designated admin (@EximmanAbdIstad)
  */
 export function isAdminTelegram(username: string): boolean {
   return normalizeTelegramUsername(username) === ADMIN_TELEGRAM_NORMALIZED;
@@ -346,7 +346,7 @@ export function validateTelegramCredentials(
       role: 'admin',
       user: adminUser,
       status: 'admin_matched',
-      message: 'Authenticated as Administrator (@Eximmanlearnbot). Full access enabled.',
+      message: 'Authenticated as Administrator (@EximmanAbdIstad). Full access enabled.',
       telegramHandle: ADMIN_TELEGRAM_HANDLE
     };
   }
@@ -365,7 +365,7 @@ export function validateTelegramCredentials(
     if (isPaid) {
       msg += ' Your 30-day subscription is active.';
     } else if (isPending) {
-      msg += ' Your subscription is awaiting @Eximmanlearnbot approval.';
+      msg += ' Your subscription is awaiting @EximmanAbdIstad approval.';
     } else if (isExpired) {
       msg += ' Your 30-day subscription has expired. You can resubscribe for 3,900 ETB / 30 days.';
     } else {

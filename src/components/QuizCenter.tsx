@@ -145,13 +145,13 @@ export const QuizCenter: React.FC = () => {
               <div className="p-6 bg-neutral-50 dark:bg-neutral-800/40 rounded-xl text-center space-y-3">
                 <Lock className="w-6 h-6 text-neutral-400 mx-auto" />
                 <p className="text-xs text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">
-                  Questions for Chapter {chapter.chapterNumber} require an active 30-day subscription (3,900 ETB via Telebirr).
+                  Questions for Chapter {chapter.chapterNumber} require an active 30-day subscription (3,900 ETB via telebirr · Promotional 60% Discount!).
                 </p>
                 <button
                   onClick={() => setShowPaywallModal(true)}
                   className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold"
                 >
-                  Subscribe via telebirr (3,900 ETB)
+                  Subscribe via telebirr (3,900 ETB · 60% Off)
                 </button>
               </div>
             ) : (
