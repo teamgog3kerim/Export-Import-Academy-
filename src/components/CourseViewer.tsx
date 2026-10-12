@@ -206,6 +206,10 @@ export const CourseViewer: React.FC = () => {
                           <button
                             key={ch.id}
                             onClick={() => {
+                              if (chLocked) {
+                                setShowPaywallModal(true);
+                                return;
+                              }
                               setSelectedChapterId(ch.id);
                               setActiveTab('study');
                               setShowResults(false);
@@ -1033,7 +1037,12 @@ export const CourseViewer: React.FC = () => {
                         const allChapters = COURSE_MODULES.flatMap(m => m.chapters);
                         const currentIndex = allChapters.findIndex(c => c.id === currentChapter.id);
                         if (currentIndex < allChapters.length - 1) {
-                          setSelectedChapterId(allChapters[currentIndex + 1].id);
+                          const nextCh = allChapters[currentIndex + 1];
+                          if (nextCh && !hasFullAccess && !nextCh.isFreeTrialAccessible) {
+                            setShowPaywallModal(true);
+                            return;
+                          }
+                          setSelectedChapterId(nextCh.id);
                           setActiveTab('study');
                           setShowResults(false);
                           setSelectedAnswers({});
@@ -1058,6 +1067,12 @@ export const CourseViewer: React.FC = () => {
                     : 'coffee'
                 }
                 onOpenChapter={(chId) => {
+                  const allChs = COURSE_MODULES.flatMap(m => m.chapters);
+                  const targetCh = allChs.find(c => c.id === chId);
+                  if (targetCh && !hasFullAccess && !targetCh.isFreeTrialAccessible) {
+                    setShowPaywallModal(true);
+                    return;
+                  }
                   setSelectedChapterId(chId);
                   setActiveTab('study');
                 }}

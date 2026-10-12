@@ -29,6 +29,7 @@ export const SubscriptionView: React.FC = () => {
     setActiveNavTab,
     isAdmin,
     hasFullAccess,
+    setShowPaywallModal,
     isTelegramApp,
     telegramWebAppUser
   } = useApp();
@@ -353,14 +354,15 @@ export const SubscriptionView: React.FC = () => {
           </div>
 
           <div className="pt-2">
-            <a
-              href="#payment-section"
+            <button
+              type="button"
+              onClick={() => setShowPaywallModal(true)}
               className="w-full py-3 px-4 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold text-center block transition-colors shadow-sm"
             >
               {currentUser.subscriptionStatus === 'expired'
                 ? 'Resubscribe for 3,900 Birr (Promotional 60% Discount!)'
                 : 'Subscribe via telebirr (3,900 Birr · Promotional 60% Discount!)'}
-            </a>
+            </button>
           </div>
         </div>
       </div>

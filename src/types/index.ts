@@ -9,6 +9,7 @@ export interface UserProfile {
   role: 'user' | 'admin';
   subscriptionStatus: SubscriptionStatus;
   registeredAt: string;
+  lastLoginAt?: string;
   expiresAt: string | null; // ISO Date string for 30 days expiry
   telebirrTxId?: string;
   paymentScreenshot?: string;

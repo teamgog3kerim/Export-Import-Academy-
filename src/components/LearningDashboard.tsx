@@ -31,6 +31,7 @@ export const LearningDashboard: React.FC = () => {
   const {
     currentUser,
     isAdmin,
+    hasFullAccess,
     language,
     completedChaptersCount,
     progressPercentage,
@@ -53,6 +54,10 @@ export const LearningDashboard: React.FC = () => {
   const completedQuizzes = Object.keys(quizScores).length;
 
   const continueLearning = () => {
+    if (nextChapter && !nextChapter.isFreeTrialAccessible && !hasFullAccess) {
+      setShowPaywallModal(true);
+      return;
+    }
     if (nextChapter) setSelectedChapterId(nextChapter.id);
     setActiveNavTab('curriculum');
   };
@@ -91,66 +96,58 @@ export const LearningDashboard: React.FC = () => {
     <div className="academy-enter space-y-6 pb-8">
       {/* Expired Subscription Banner */}
       {!isAdmin && currentUser.subscriptionStatus === 'expired' && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500/80 text-amber-950 dark:text-amber-200 shadow-xs">
-          <div className="flex items-start gap-3">
-            <span className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 mt-0.5">
-              <AlertTriangle className="h-5 w-5" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-500/80 text-amber-950 dark:text-amber-200 shadow-2xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0">
+              <AlertTriangle className="h-4 w-4" />
             </span>
-            <div>
-              <h3 className="text-sm font-bold">
-                {language === 'am' ? 'የ30 ቀናት የአባልነት ጊዜዎ አልቋል' : 'Your 30-Day Subscription Has Expired'}
-              </h3>
-              <p className="text-xs text-amber-900/80 dark:text-amber-300/80 mt-0.5">
-                {language === 'am'
-                  ? 'የአባልነት ጊዜው 30 ቀናት ነው። ያልተቋረጠ ትምህርት እና የምስክር ወረቀት ለማግኘት አሁን በ3,900 ብር (ልዩ የ60% ቅናሽ!) ያድሱ።'
-                  : 'Every subscription period lasts 30 days. Resubscribe now for 3,900 Birr (Promotional 60% Discount!) to continue uninterrupted access to all 16 chapters and certificates.'}
-              </p>
+            <div className="text-xs min-w-0">
+              <span className="font-bold">
+                {language === 'am' ? 'የ30 ቀናት ምዝገባዎ አልቋል' : '30-Day Subscription Expired'}
+              </span>
+              <span className="hidden md:inline text-amber-900/80 dark:text-amber-300/80 text-[11px] ml-2">
+                {language === 'am' ? '· በ3,900 ብር (የ60% ቅናሽ) ያድሱ' : '· Renew for 3,900 ETB (Promotional 60% Discount!)'}
+              </span>
             </div>
           </div>
           <button
             onClick={() => setShowPaywallModal(true)}
-            className="shrink-0 px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5"
+            className="shrink-0 self-end sm:self-auto px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg text-xs font-bold transition shadow-2xs"
           >
-            {language === 'am'
-              ? 'በ3,900 ብር ያድሱ (ልዩ የ60% ቅናሽ!)'
-              : 'Resubscribe for 3,900 ETB (Promotional 60% Discount!)'}
+            {language === 'am' ? 'በ3,900 ብር ያድሱ' : 'Renew (3,900 ETB · 60% Off)'}
           </button>
         </div>
       )}
 
-      {/* Telegram Channel Invitation Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/80 text-sky-950 dark:text-sky-100 shadow-2xs">
-        <div className="flex items-start gap-3.5">
-          <span className="p-2.5 rounded-xl bg-[#229ed9]/15 text-[#1b7fae] dark:text-[#6cc2e9] mt-0.5 shrink-0">
-            <Send className="h-5 w-5" />
+      {/* Telegram Channel Invitation Banner (Compact & To The Point) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-sky-50/90 dark:bg-sky-950/40 border border-sky-200/90 dark:border-sky-800/80 text-sky-950 dark:text-sky-100 shadow-2xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#229ed9]/15 text-[#1b7fae] dark:text-[#6cc2e9] shrink-0">
+            <Send className="h-3.5 w-3.5 text-[#229ed9]" />
           </span>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-bold text-sky-950 dark:text-sky-100">
-                {language === 'am'
-                  ? 'የEXIMMAN LEARN ይፋዊ የቴሌግራም ቻናል ይቀላቀሉ'
-                  : 'Join EXIMMAN LEARN Official Telegram Channel'}
-              </h3>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#229ed9]/20 text-[#1b7fae] dark:text-[#6cc2e9]">
-                @eximmanlearn
-              </span>
-            </div>
-            <p className="text-xs text-sky-900/80 dark:text-sky-200/80 mt-1 leading-relaxed max-w-2xl">
-              {language === 'am'
-                ? 'ከሌሎች የኢትዮጵያ የውጭ ንግድ ባለሙያዎች ጋር ይገናኙ። የቀን የውጭ ምንዛሬ መመሪያዎችን፣ የጉምሩክ ታሪፍ መረጃዎችን፣ የኤል ሲ ትንታኔዎችንና የአካዳሚውን አዳዲስ ማስታወቂያዎች በቅጽበት ያግኙ።'
-                : 'Connect with fellow Ethiopian trade professionals. Receive real-time NBE FX directives, customs tariff updates, documentary credit case studies, and academy announcements.'}
-            </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0 text-xs">
+            <span className="font-bold text-sky-950 dark:text-sky-100">
+              {language === 'am' ? 'የቴሌግራም ቻናል' : 'Official Telegram Channel'}
+            </span>
+            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#229ed9]/20 text-[#1b7fae] dark:text-[#6cc2e9]">
+              @eximmanlearn
+            </span>
+            <span className="hidden md:inline text-sky-800/80 dark:text-sky-200/70 text-[11px] truncate">
+              · {language === 'am'
+                ? 'የቀን የውጭ ምንዛሬ መመሪያዎች፣ የጉምሩክ ታሪፍና የንግድ መረጃዎች'
+                : 'Real-time NBE FX directives, customs tariffs & academy updates'}
+            </span>
           </div>
         </div>
         <a
           href="https://t.me/eximmanlearn"
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 px-4 py-2.5 bg-[#229ed9] hover:bg-[#1e8ec3] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs group"
+          className="shrink-0 self-end sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#229ed9] hover:bg-[#1e8ec3] text-white rounded-lg text-xs font-bold transition shadow-2xs group"
         >
-          <Send className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
-          <span>{language === 'am' ? 'ቻናሉን ይቀላቀሉ (@eximmanlearn)' : 'Join Channel (@eximmanlearn)'}</span>
-          <ExternalLink className="h-3 w-3 opacity-70" />
+          <Send className="h-3 w-3 transition-transform group-hover:scale-110" />
+          <span>{language === 'am' ? 'ቻናሉን ይቀላቀሉ' : 'Join Channel'}</span>
+          <ExternalLink className="h-2.5 w-2.5 opacity-70" />
         </a>
       </div>
 
@@ -242,7 +239,7 @@ export const LearningDashboard: React.FC = () => {
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#229ed9] hover:bg-[#1e8ec3] px-4 py-2.5 text-sm font-bold text-white transition shadow-sm"
               >
                 <Send className="h-4 w-4" />
-                <span>{language === 'am' ? 'የቴሌግራም ቻናል ይቀላቀሉ' : 'Join Telegram Channel'}</span>
+                <span>{language === 'am' ? 'ለተጨማሪ የቢዝነስ መረጃዎች ቻናላችንን ይቀላቀሉ' : 'Join our channel for more business Updates'}</span>
               </a>
 
               {!effectiveTelegramUsername && (
@@ -368,6 +365,10 @@ export const LearningDashboard: React.FC = () => {
                       <button
                         onClick={() => {
                           const target = module.chapters.find(chapter => !isChapterCompleted(chapter.id)) ?? firstChapter;
+                          if (target && !target.isFreeTrialAccessible && !hasFullAccess) {
+                            setShowPaywallModal(true);
+                            return;
+                          }
                           if (target) setSelectedChapterId(target.id);
                           setActiveNavTab('curriculum');
                         }}
@@ -401,7 +402,17 @@ export const LearningDashboard: React.FC = () => {
             </p>
             <div className="mt-4 space-y-2.5">
               {toolLinks.map(({ tab, title, description, icon: Icon }) => (
-                <button key={tab} onClick={() => setActiveNavTab(tab)} className="academy-card academy-card-hover flex w-full items-center gap-3 p-3.5 text-left">
+                <button
+                  key={tab}
+                  onClick={() => {
+                    if (!hasFullAccess) {
+                      setShowPaywallModal(true);
+                      return;
+                    }
+                    setActiveNavTab(tab);
+                  }}
+                  className="academy-card academy-card-hover flex w-full items-center gap-3 p-3.5 text-left"
+                >
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f7eee2] text-[#9b622e]"><Icon className="h-4.5 w-4.5" /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-bold">{getToolTitle(tab, title)}</span>

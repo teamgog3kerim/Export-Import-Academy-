@@ -110,8 +110,8 @@ export const TRANSLATIONS: Translations = {
     am: 'ትምህርቱን ይቀጥሉ'
   },
   btn_join_telegram: {
-    en: 'Join Telegram Channel',
-    am: 'የቴሌግራም ቻናሉን ይቀላቀሉ'
+    en: 'Join our channel for more business Updates',
+    am: 'ለተጨማሪ የቢዝነስ መረጃዎች ቻናላችንን ይቀላቀሉ'
   },
   btn_login_telegram: {
     en: 'Log in with Telegram',

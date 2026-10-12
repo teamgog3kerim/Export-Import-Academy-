@@ -66,7 +66,7 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     if (res.role === 'admin') {
       setValidationStatus('admin');
-      setStatusMessage('Designated Administrator (@EximmanAbdIstad) credentials recognized.');
+      setStatusMessage('Administrator (@EximmanAbdIstad) access requires clicking the One-Click Telegram Widget above.');
     } else if (res.status === 'user_matched' && res.user) {
       setValidationStatus('existing_student');
       const sub =
@@ -95,6 +95,15 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
     const trimmed = inputHandle.trim();
     if (!trimmed) {
       setFeedback({ type: 'error', text: 'Please enter a Telegram username (e.g. @username).' });
+      return;
+    }
+
+    // Strict security: Administrator (@EximmanAbdIstad) can only authenticate via official Telegram Widget or Mini App
+    if (isAdminTelegram(trimmed)) {
+      setFeedback({
+        type: 'error',
+        text: 'Administrator (@EximmanAbdIstad) access requires authenticating through the One-Click Telegram Login Widget above.'
+      });
       return;
     }
 
@@ -148,10 +157,10 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
             </span>
             <div>
               <h2 id="telegram-auth-title" className="text-lg font-serif-title font-bold text-neutral-900 dark:text-neutral-50">
-                Telegram Authentication
+                Telegram Login
               </h2>
               <p className="text-[11px] text-neutral-500">
-                Seamless login with your Telegram account
+                Log in with your Telegram account to start &amp; continue learning
               </p>
             </div>
           </div>
@@ -357,7 +366,7 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <Send className="h-3.5 w-3.5" />
               <span>
                 {validationStatus === 'admin'
-                  ? 'Log in as Administrator (@EximmanAbdIstad)'
+                  ? 'Admin: Use Telegram Widget Above'
                   : validationStatus === 'existing_student'
                   ? 'Validate & Log In'
                   : 'Enroll & Start Free Trial'}

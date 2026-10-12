@@ -43,7 +43,8 @@ export const AdminDashboard: React.FC = () => {
     adminApproveUser,
     adminRejectUser,
     adminExtendUser,
-    switchUser,
+    adminGrantLifetime,
+    adminResetToTrial,
     currentUser,
     loginWithTelegram
   } = useApp();
@@ -530,23 +531,46 @@ export const AdminDashboard: React.FC = () => {
                     >
                       {/* Name & Telegram */}
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-neutral-900 dark:text-neutral-100">
-                          {user.fullName}
+                        <div className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                          <span>{user.fullName}</span>
+                          {user.completedChapters && user.completedChapters.length > 0 && (
+                            <span className="text-[10px] font-normal text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                              {user.completedChapters.length}/16 ch
+                            </span>
+                          )}
                         </div>
-                        <div className="text-[11px] font-mono text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1 mt-0.5">
-                          <Send className="w-3 h-3 shrink-0" />
-                          <span>{user.telegramUsername}</span>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span className="text-[11px] font-mono text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
+                            <Send className="w-3 h-3 shrink-0" />
+                            <span>{user.telegramUsername}</span>
+                          </span>
+
+                          {user.telegramUsername && (
+                            <a
+                              href={`https://t.me/${user.telegramUsername.replace(/^@/, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#1b7fae] dark:text-[#6cc2e9] hover:underline bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 rounded border border-sky-200 dark:border-sky-800"
+                              title={`Directly message ${user.fullName} on Telegram`}
+                            >
+                              <span>Follow up</span>
+                              <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                            </a>
+                          )}
                         </div>
                       </td>
 
-                      {/* Mobile */}
+                      {/* Mobile & Activity */}
                       <td className="py-3.5 px-4 font-mono">
                         <div className="text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
-                          <Smartphone className="w-3.5 h-3.5 text-neutral-400" />
+                          <Smartphone className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                           <span>{user.phoneNumber || '—'}</span>
                         </div>
-                        <div className="text-neutral-400 text-[10px] mt-0.5">
-                          Registered: {new Date(user.registeredAt).toLocaleDateString()}
+                        <div className="text-neutral-400 text-[10px] mt-0.5 space-y-0.5">
+                          <div>Reg: {new Date(user.registeredAt).toLocaleDateString()}</div>
+                          {user.lastLoginAt && (
+                            <div className="text-neutral-500">Active: {new Date(user.lastLoginAt).toLocaleDateString()}</div>
+                          )}
                         </div>
                       </td>
 
@@ -558,10 +582,16 @@ export const AdminDashboard: React.FC = () => {
                             <span>Pending (3,900 ETB)</span>
                           </span>
                         )}
-                        {user.subscriptionStatus === 'active_paid' && (
+                        {user.subscriptionStatus === 'active_paid' && !user.expiresAt && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-950 px-2.5 py-0.5 rounded-full border border-purple-300 dark:border-purple-800">
+                            <Sparkles className="w-3 h-3" />
+                            <span>Lifetime VIP Access</span>
+                          </span>
+                        )}
+                        {user.subscriptionStatus === 'active_paid' && user.expiresAt && (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
                             <CheckCircle2 className="w-3 h-3" />
-                            <span>Active Paid</span>
+                            <span>Active Paid (30D)</span>
                           </span>
                         )}
                         {user.subscriptionStatus === 'expired' && (
@@ -604,7 +634,16 @@ export const AdminDashboard: React.FC = () => {
 
                       {/* Access Period */}
                       <td className="py-3.5 px-4">
-                        {user.subscriptionStatus === 'active_paid' && daysLeft !== null ? (
+                        {user.subscriptionStatus === 'active_paid' && !user.expiresAt ? (
+                          <div>
+                            <span className="font-bold text-purple-600 dark:text-purple-400 font-mono">
+                              Unlimited Lifetime
+                            </span>
+                            <span className="text-[10px] text-neutral-400 block">
+                              All 16 Chapters Unlocked
+                            </span>
+                          </div>
+                        ) : user.subscriptionStatus === 'active_paid' && daysLeft !== null ? (
                           <div>
                             <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
                               {daysLeft} Days Remaining
@@ -618,16 +657,24 @@ export const AdminDashboard: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Admin Actions */}
+                      {/* Admin Approval Actions */}
                       <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
                           {user.subscriptionStatus === 'pending_approval' && (
                             <>
                               <button
                                 onClick={() => adminApproveUser(user.id, 30)}
                                 className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-[11px] transition-colors shadow-2xs"
+                                title="Approve 30-Day Full Access"
                               >
                                 Approve 30 Days
+                              </button>
+                              <button
+                                onClick={() => adminGrantLifetime(user.id)}
+                                className="px-2.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg font-bold text-[11px] transition-colors shadow-2xs"
+                                title="Grant Lifetime VIP Access"
+                              >
+                                Lifetime VIP
                               </button>
                               <button
                                 onClick={() => adminRejectUser(user.id)}
@@ -639,44 +686,87 @@ export const AdminDashboard: React.FC = () => {
                           )}
 
                           {user.subscriptionStatus === 'active_paid' && (
-                            <button
-                              onClick={() => adminExtendUser(user.id, 30)}
-                              className="px-2.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-lg font-semibold text-[11px] transition-colors flex items-center gap-1"
-                            >
-                              <RotateCcw className="w-3 h-3 text-amber-600" />
-                              <span>Extend +30D</span>
-                            </button>
+                            <>
+                              <button
+                                onClick={() => adminExtendUser(user.id, 30)}
+                                className="px-2.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-lg font-semibold text-[11px] transition-colors flex items-center gap-1"
+                                title="Add 30 additional days"
+                              >
+                                <RotateCcw className="w-3 h-3 text-amber-600" />
+                                <span>Extend +30D</span>
+                              </button>
+                              {!user.expiresAt ? null : (
+                                <button
+                                  onClick={() => adminGrantLifetime(user.id)}
+                                  className="px-2.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg font-semibold text-[11px] transition-colors"
+                                  title="Upgrade to Lifetime Access"
+                                >
+                                  Make Lifetime
+                                </button>
+                              )}
+                              <button
+                                onClick={() => adminResetToTrial(user.id)}
+                                className="px-2 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 text-neutral-600 rounded-lg text-[10px]"
+                                title="Reset to Free Trial"
+                              >
+                                Reset Trial
+                              </button>
+                            </>
                           )}
 
                           {user.subscriptionStatus === 'free_trial' && (
-                            <button
-                              onClick={() => adminApproveUser(user.id, 30)}
-                              className="px-2.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-bold text-[11px] transition-colors"
-                            >
-                              Upgrade to Paid
-                            </button>
+                            <>
+                              <button
+                                onClick={() => adminApproveUser(user.id, 30)}
+                                className="px-2.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-bold text-[11px] transition-colors"
+                                title="Upgrade to 30-day paid subscription"
+                              >
+                                Approve 30D (3,900 ETB)
+                              </button>
+                              <button
+                                onClick={() => adminGrantLifetime(user.id)}
+                                className="px-2 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg font-bold text-[11px] transition-colors"
+                                title="Grant Lifetime Access"
+                              >
+                                VIP Lifetime
+                              </button>
+                            </>
                           )}
 
                           {user.subscriptionStatus === 'expired' && (
-                            <button
-                              onClick={() => adminApproveUser(user.id, 30)}
-                              className="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-[11px] transition-colors shadow-2xs"
-                            >
-                              Renew 30 Days (3,900 ETB)
-                            </button>
+                            <>
+                              <button
+                                onClick={() => adminApproveUser(user.id, 30)}
+                                className="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-[11px] transition-colors shadow-2xs"
+                                title="Renew for 30 Days"
+                              >
+                                Renew 30D (3,900 ETB)
+                              </button>
+                              <button
+                                onClick={() => adminGrantLifetime(user.id)}
+                                className="px-2 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg font-bold text-[11px] transition-colors shadow-2xs"
+                              >
+                                Lifetime VIP
+                              </button>
+                            </>
                           )}
 
-                          <button
-                            onClick={() => switchUser(user.id)}
-                            title="Switch view to this student"
-                            className={`px-2 py-1.5 rounded-lg text-[10px] font-mono border transition-colors ${
-                              isCurrent
-                                ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300 font-bold'
-                                : 'border-neutral-200 dark:border-neutral-700 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100'
-                            }`}
-                          >
-                            {isCurrent ? 'Viewing' : 'Switch'}
-                          </button>
+                          {user.subscriptionStatus === 'rejected' && (
+                            <>
+                              <button
+                                onClick={() => adminApproveUser(user.id, 30)}
+                                className="px-2.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-lg font-bold text-[11px] transition-colors"
+                              >
+                                Re-approve 30D
+                              </button>
+                              <button
+                                onClick={() => adminResetToTrial(user.id)}
+                                className="px-2 py-1.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 rounded-lg text-[10px]"
+                              >
+                                To Trial
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

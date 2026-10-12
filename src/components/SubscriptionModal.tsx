@@ -12,7 +12,8 @@ import {
   User,
   Send,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Award
 } from 'lucide-react';
 import { triggerTelegramHaptic, formatTelegramHandle } from '../utils/telegramAuth';
 import { TelegramLoginWidget } from './TelegramLoginWidget';
@@ -192,12 +193,12 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <h2 id="subscription-modal-title" className="text-xl sm:text-2xl font-serif-title font-bold text-neutral-900 dark:text-neutral-50 mt-1">
               {currentUser.subscriptionStatus === 'expired'
                 ? 'Your 30-Day Subscription Expired'
-                : 'Unlock All 16 Chapters & Tools'}
+                : 'Unlock All 16 Chapters & Trade Tools'}
             </h2>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
               {currentUser.subscriptionStatus === 'expired'
                 ? 'Every subscription is valid for 30 days. Renew your access for 3,900 Birr (Promotional 60% Discount!) to continue accessing all lessons, tools, and certification.'
-                : 'Every subscription is for 30 days (3,900 Birr per 30 days · Promotional 60% Discount!). Get full access to all lessons, calculation sheets, checklists, and verified certification.'}
+                : 'Subscribe to access Chapters 3 to 16, Landed Cost Build Up, Letter of Credit, Customs Tax Assessment, and Incoterms Guide.'}
             </p>
           </div>
           <button
@@ -208,6 +209,73 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
+
+        {/* Full Subscription Plan Card */}
+        <div className="relative bg-gradient-to-b from-amber-50/70 to-white dark:from-amber-950/30 dark:to-neutral-900 rounded-3xl border-2 border-amber-600/80 p-5 sm:p-6 space-y-4 shadow-md">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+              Full Academy Pass
+            </span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-rose-600 text-white shadow-2xs">
+              Promotional 60% Discount!
+            </span>
+          </div>
+
+          <div>
+            <h3 className="font-serif-title text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-50">
+              30-Day Complete Subscription
+            </h3>
+            <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+              Every subscription is valid for 30 days. When 30 days expire, you can renew for 3,900 Birr (Promotional 60% Discount!).
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-baseline gap-2 text-neutral-900 dark:text-neutral-50">
+            <span className="font-serif-title text-3xl sm:text-4xl font-extrabold text-amber-900 dark:text-amber-100">
+              3,900
+            </span>
+            <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
+              Birr / 30 Days
+            </span>
+            <span className="text-sm text-neutral-400 line-through font-semibold">
+              9,750 Birr
+            </span>
+            <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
+              (Promotional 60% Discount!)
+            </span>
+          </div>
+
+          <ul className="space-y-2 text-xs text-neutral-700 dark:text-neutral-200 pt-2 border-t border-amber-200/60 dark:border-amber-900/40">
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span><strong>Fixed 30-Day Period:</strong> Full access for 30 days from approval date, at promotional rate of 3,900 Birr (60% Discount!)</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span><strong>Chapters 3 through 16 Unlocked:</strong> Customs classification, Djibouti corridor, dry ports, coffee export, FX hedging</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span><strong>Landed Cost Build Up:</strong> 100% all-inclusive unit landed cost &amp; NBE foreign exchange rate forecasting</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span><strong>Letter of Credit (L/C):</strong> 10 units dump truck case, FCY conversion, statutory bank charges</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span><strong>Customs 7-Tier Tax Assessment:</strong> Duty, Excise, Surtax, Social Welfare, VAT, Withholding, Scanning fees</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span><strong>Incoterms® 2020 Guide:</strong> 11-stage corridor risk and cost distribution matrix &amp; dispute case studies</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Award className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <span><strong>Verified Academy Certificate:</strong> Generates unique code and progress verification</span>
+            </li>
+          </ul>
         </div>
 
         {/* Telebirr Payment Instructions Box */}

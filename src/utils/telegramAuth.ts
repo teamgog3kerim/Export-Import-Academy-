@@ -113,6 +113,25 @@ export const TELEGRAM_BOT_TOKEN = '8569973222:AAGLyuItmHoanxh-5P6L8eQf40TDQJxOYs
 export const TELEGRAM_BOT_USERNAME = 'Eximmanlearnbot';
 export const TELEGRAM_BOT_ID = '8569973222';
 export const TELEGRAM_BOT_NAME = 'EXIMMAN LEARN';
+export const TELEGRAM_BOT_URL = 'https://t.me/Eximmanlearnbot';
+export const TELEGRAM_CHANNEL_HANDLE = '@eximmanlearn';
+export const TELEGRAM_CHANNEL_URL = 'https://t.me/eximmanlearn';
+
+export function openTelegramChannel() {
+  if (typeof window !== 'undefined' && window.Telegram?.WebApp?.openTelegramLink) {
+    window.Telegram.WebApp.openTelegramLink(TELEGRAM_CHANNEL_URL);
+  } else {
+    window.open(TELEGRAM_CHANNEL_URL, '_blank', 'noopener,noreferrer');
+  }
+}
+
+export function openTelegramBot() {
+  if (typeof window !== 'undefined' && window.Telegram?.WebApp?.openTelegramLink) {
+    window.Telegram.WebApp.openTelegramLink(TELEGRAM_BOT_URL);
+  } else {
+    window.open(TELEGRAM_BOT_URL, '_blank', 'noopener,noreferrer');
+  }
+}
 
 export interface TelegramBotInfo {
   ok: boolean;
@@ -318,7 +337,8 @@ export function isAdminTelegram(username: string): boolean {
  */
 export function validateTelegramCredentials(
   input: { telegramUsername: string; phoneNumber?: string },
-  registeredUsers: UserProfile[]
+  registeredUsers: UserProfile[],
+  authenticatedTelegramUsername?: string
 ): TelegramAuthValidationResult {
   const rawInput = input.telegramUsername?.trim() || '';
   if (!rawInput) {
@@ -335,20 +355,35 @@ export function validateTelegramCredentials(
   const normalized = normalizeTelegramUsername(rawInput);
   const handle = `@${normalized}`;
 
-  // 1. Admin Verification
+  // 1. Admin Verification (Strict Security: only allowed if verified from official Telegram session)
   if (normalized === ADMIN_TELEGRAM_NORMALIZED) {
+    const isSessionVerified =
+      Boolean(authenticatedTelegramUsername) &&
+      normalizeTelegramUsername(authenticatedTelegramUsername!) === ADMIN_TELEGRAM_NORMALIZED;
+
     const adminUser = registeredUsers.find(
       u => u.role === 'admin' || normalizeTelegramUsername(u.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED
     ) || null;
 
-    return {
-      isValid: true,
-      role: 'admin',
-      user: adminUser,
-      status: 'admin_matched',
-      message: 'Authenticated as Administrator (@EximmanAbdIstad). Full access enabled.',
-      telegramHandle: ADMIN_TELEGRAM_HANDLE
-    };
+    if (isSessionVerified) {
+      return {
+        isValid: true,
+        role: 'admin',
+        user: adminUser,
+        status: 'admin_matched',
+        message: 'Authenticated as Administrator (@EximmanAbdIstad). Full access enabled.',
+        telegramHandle: ADMIN_TELEGRAM_HANDLE
+      };
+    } else {
+      return {
+        isValid: false,
+        role: 'user',
+        user: null,
+        status: 'invalid_input',
+        message: 'Administrator (@EximmanAbdIstad) access requires logging in through your verified Telegram account.',
+        telegramHandle: ADMIN_TELEGRAM_HANDLE
+      };
+    }
   }
 
   // 2. Student Verification against Admin-defined / Registered Accounts

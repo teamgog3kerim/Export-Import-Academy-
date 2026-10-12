@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { FileText, CheckCircle2, DollarSign, ArrowRight, Printer, RotateCcw, AlertTriangle, Layers } from 'lucide-react';
+import { FileText, CheckCircle2, DollarSign, ArrowRight, Printer, RotateCcw, AlertTriangle, Layers, Lock, ShieldCheck } from 'lucide-react';
 
 export const LCCalculator: React.FC = () => {
   const { hasFullAccess, setShowPaywallModal } = useApp();
@@ -180,6 +180,33 @@ export const LCCalculator: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Subscription Paywall Overlay if not full access */}
+      {!hasFullAccess && (
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-700 text-white flex items-center justify-center shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-amber-900 dark:text-amber-100 uppercase tracking-wider">
+                Full Academy Subscription Required
+              </h3>
+              <p className="text-xs text-amber-800/90 dark:text-amber-300/90 mt-0.5">
+                The Letter of Credit (L/C) Settlement Engine is available for full academy members. Subscribe for 3,900 ETB (Promotional 60% Discount!) to access full calculation models, partial lot splits, and printable settlement sheets.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPaywallModal(true)}
+            className="px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shrink-0 transition-colors shadow-xs flex items-center gap-1.5"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Subscribe to Unlock (3,900 ETB)</span>
+          </button>
+        </div>
+      )}
 
       {/* Case 1: Full Shipment View */}
       {activeCase === 'case1' && (

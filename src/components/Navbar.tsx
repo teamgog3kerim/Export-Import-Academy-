@@ -25,7 +25,8 @@ import {
   User,
   Plus,
   LogOut,
-  Languages
+  Languages,
+  Lock
 } from 'lucide-react';
 
 type NavItem = {
@@ -83,16 +84,17 @@ export const Navbar: React.FC = () => {
     t,
     currentUser,
     users,
-    switchUser,
-    loginAsAdmin,
     loginWithTelegram,
     logout,
     isAdmin,
+    hasFullAccess,
     setShowPaywallModal,
     setShowTelegramAuthModal,
     isTelegramApp,
     telegramWebAppUser
   } = useApp();
+
+  const PAID_TOOL_TABS: NavItem['id'][] = ['landed_cost', 'lc_calculator', 'tax_calculator', 'incoterms_guide'];
 
   const getNavLabel = (id: string, defaultLabel: string) => {
     if (language !== 'am') return defaultLabel;
@@ -123,26 +125,18 @@ export const Navbar: React.FC = () => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [telegramLoginInput, setTelegramLoginInput] = useState('');
-  const [showTelegramForm, setShowTelegramForm] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-
-  const isUserAdminAuthorized =
-    isAdminTelegram(currentUser.telegramUsername) ||
-    (Boolean(telegramWebAppUser?.username) && isAdminTelegram(telegramWebAppUser?.username || ''));
 
   useEffect(() => {
     if (!userDropdownOpen) return;
     const closeOnOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
-        setShowTelegramForm(false);
       }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setUserDropdownOpen(false);
-        setShowTelegramForm(false);
       }
     };
     document.addEventListener('mousedown', closeOnOutside);
@@ -154,17 +148,14 @@ export const Navbar: React.FC = () => {
   }, [userDropdownOpen]);
 
   const navigate = (tab: NavItem['id']) => {
+    if (PAID_TOOL_TABS.includes(tab) && !hasFullAccess) {
+      setShowPaywallModal(true);
+      setMobileMenuOpen(false);
+      setUserDropdownOpen(false);
+      return;
+    }
     setActiveNavTab(tab as NavTabType);
     setMobileMenuOpen(false);
-    setUserDropdownOpen(false);
-  };
-
-  const handleTelegramLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!telegramLoginInput.trim()) return;
-    loginWithTelegram(telegramLoginInput.trim());
-    setTelegramLoginInput('');
-    setShowTelegramForm(false);
     setUserDropdownOpen(false);
   };
 
@@ -172,6 +163,9 @@ export const Navbar: React.FC = () => {
     const Icon = item.icon;
     const active = activeNavTab === item.id;
     const itemLabel = getNavLabel(item.id, item.label);
+    const isPaidTool = PAID_TOOL_TABS.includes(item.id);
+    const showLock = isPaidTool && !hasFullAccess;
+
     return (
       <button
         key={item.id}
@@ -192,7 +186,10 @@ export const Navbar: React.FC = () => {
           }`}
         />
         <span>{itemLabel}</span>
-        {active && mobile && (
+        {showLock && (
+          <Lock className="ml-auto h-3 w-3 text-amber-600/80 dark:text-amber-400/80 shrink-0" />
+        )}
+        {active && mobile && !showLock && (
           <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-[#176b60] dark:text-[#8bc9b8]">
             {language === 'am' ? 'ገባሪ' : 'Active'}
           </span>
@@ -399,124 +396,35 @@ export const Navbar: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Switch to or log in as student accounts (if more than 1 registered user) */}
-                  {users.length > 1 && (
-                    <div className="py-1">
-                      <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                        Switch Account
-                      </div>
-                      <div className="max-h-40 overflow-y-auto space-y-0.5">
-                        {users.map(user => (
-                          <button
-                            key={user.id}
-                            role="menuitem"
-                            onClick={() => {
-                              switchUser(user.id);
-                              setUserDropdownOpen(false);
-                            }}
-                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-[#eff3ee] dark:hover:bg-[#26312d] ${
-                              user.id === currentUser.id ? 'bg-[#e6f1ed] dark:bg-[#263a35]' : ''
-                            }`}
-                          >
-                            <div className="min-w-0 pr-2">
-                              <span className="block text-xs font-semibold truncate">
-                                {user.fullName}
-                              </span>
-                              <span className="block text-[10px] font-mono text-neutral-500 truncate">
-                                {user.telegramUsername}
-                              </span>
-                            </div>
-                            {user.id === currentUser.id && (
-                              <Check className="h-4 w-4 text-[#176b60] shrink-0" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quick Telegram Sign In / Switch */}
-                  {showTelegramForm ? (
-                    <form onSubmit={handleTelegramLoginSubmit} className="p-2 border-t academy-line space-y-2">
-                      <label className="block text-[10px] font-bold uppercase text-neutral-500">
-                        Sign in with Telegram Handle
-                      </label>
-                      <input
-                        type="text"
-                        autoFocus
-                        required
-                        value={telegramLoginInput}
-                        onChange={e => setTelegramLoginInput(e.target.value)}
-                        placeholder="@username"
-                        className="w-full px-2.5 py-1.5 text-xs bg-neutral-50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg"
-                      />
-                      <div className="flex gap-1.5">
-                        <button
-                          type="submit"
-                          className="flex-1 py-1 bg-amber-700 text-white rounded-lg text-xs font-bold"
-                        >
-                          Switch
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowTelegramForm(false)}
-                          className="px-2 py-1 bg-neutral-200 dark:bg-neutral-700 text-xs rounded-lg"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <div className="grid gap-1 border-t pt-2 academy-line">
+                  {/* User Actions - No switching to admin or other accounts allowed */}
+                  <div className="grid gap-1 border-t pt-2 academy-line">
+                    {/* If Admin: Direct Control Center Link */}
+                    {isAdmin && (
                       <button
                         role="menuitem"
                         onClick={() => {
-                          setShowTelegramAuthModal(true);
+                          navigate('admin');
                           setUserDropdownOpen(false);
                         }}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#1b7fae] dark:text-[#6cc2e9] hover:bg-sky-50 dark:hover:bg-sky-950/40"
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-amber-800 hover:bg-amber-100/60 dark:text-amber-300 dark:hover:bg-amber-950/40 bg-amber-50/60 dark:bg-amber-950/20"
                       >
-                        <Send className="h-3.5 w-3.5 text-[#229ed9]" />
-                        <span>Telegram Login Widget</span>
+                        <Shield className="h-3.5 w-3.5 text-amber-600" />
+                        <span>Administrator Control Center</span>
                       </button>
+                    )}
 
-                      <button
-                        role="menuitem"
-                        onClick={() => setShowTelegramForm(true)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-[#eff3ee] dark:hover:bg-[#26312d]"
-                      >
-                        <User className="h-3.5 w-3.5 text-neutral-500" />
-                        <span>Sign In with Handle</span>
-                      </button>
-
-                      {/* Only @EximmanAbdIstad is allowed to get or see this button. Other telegram users are not allowed. */}
-                      {isUserAdminAuthorized && !isAdmin && (
-                        <button
-                          role="menuitem"
-                          onClick={() => {
-                            loginAsAdmin();
-                            setUserDropdownOpen(false);
-                          }}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#176b60] hover:bg-[#e6f1ed] dark:text-[#b5dfd2] dark:hover:bg-[#26312d]"
-                        >
-                          <Shield className="h-3.5 w-3.5" />
-                          <span>Login as Admin (@EximmanAbdIstad)</span>
-                        </button>
-                      )}
-
-                      {isAdmin && (
-                        <button
-                          role="menuitem"
-                          onClick={() => {
-                            navigate('admin');
-                            setUserDropdownOpen(false);
-                          }}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#176b60] hover:bg-[#e6f1ed] dark:text-[#b5dfd2] dark:hover:bg-[#263a35]"
-                        >
-                          <Shield className="h-3.5 w-3.5" />
-                          <span>Admin Dashboard (@EximmanAbdIstad)</span>
-                        </button>
-                      )}
+                    {/* Telegram Account Login / Re-connect Modal */}
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setShowTelegramAuthModal(true);
+                        setUserDropdownOpen(false);
+                      }}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#1b7fae] dark:text-[#6cc2e9] hover:bg-sky-50 dark:hover:bg-sky-950/40"
+                    >
+                      <Send className="h-3.5 w-3.5 text-[#229ed9]" />
+                      <span>{currentUser.telegramUsername ? 'Telegram Account Details' : 'Log in with Telegram'}</span>
+                    </button>
 
                       <button
                         role="menuitem"
@@ -558,7 +466,6 @@ export const Navbar: React.FC = () => {
                         </button>
                       )}
                     </div>
-                  )}
                 </div>
               )}
             </div>

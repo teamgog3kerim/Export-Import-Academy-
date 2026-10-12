@@ -43,6 +43,8 @@ interface AppContextType {
   adminApproveUser: (userId: string, days?: number) => void;
   adminRejectUser: (userId: string, reason?: string) => void;
   adminExtendUser: (userId: string, days?: number) => void;
+  adminGrantLifetime: (userId: string) => void;
+  adminResetToTrial: (userId: string) => void;
   switchUser: (userId: string) => void;
   loginAsAdmin: () => void;
   loginWithTelegram: (telegramUsername: string, fullName?: string, phoneNumber?: string) => void;
@@ -172,6 +174,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUserId, setCurrentUserId] = useState<string>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
+      const tgUser = getTelegramUser();
+      // Security: if stored was admin, only allow if verified @EximmanAbdIstad in Telegram session
+      if (stored === ADMIN_USER.id || stored === 'admin-eximman-abdistad') {
+        const isVerifiedAdmin =
+          Boolean(tgUser?.username) &&
+          normalizeTelegramUsername(tgUser?.username || '') === ADMIN_TELEGRAM_NORMALIZED;
+        if (isVerifiedAdmin) {
+          return ADMIN_USER.id;
+        }
+        return 'guest-student';
+      }
       if (stored && !isSampleUserId(stored) && stored !== 'admin-eximman-bot') return stored;
     } catch (e) {
       console.error(e);
@@ -202,7 +215,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeNavTab, setActiveNavTab] = useState<NavTabType>('overview');
   const [selectedChapterId, setSelectedChapterId] = useState<string>('ch-1');
   const [showPaywallModal, setShowPaywallModal] = useState<boolean>(false);
-  const [showTelegramAuthModal, setShowTelegramAuthModal] = useState<boolean>(false);
+  const [showTelegramAuthModal, setShowTelegramAuthModal] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_CURRENT_USER);
+      if (!stored || stored === 'guest-student') return true;
+      const storedUsers = localStorage.getItem(STORAGE_KEY_USERS);
+      if (storedUsers) {
+        const parsed = JSON.parse(storedUsers);
+        const user = parsed.find((u: UserProfile) => u.id === stored);
+        if (!user || !user.telegramUsername) return true;
+      }
+    } catch {
+      return true;
+    }
+    return false;
+  });
 
   // Telegram Mini App detection & user state
   const [isTelegramApp, setIsTelegramApp] = useState<boolean>(() => isTelegramMiniApp());
@@ -237,15 +264,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const tgUser = getTelegramUser();
     if (tgUser) {
       setTelegramWebAppUser(tgUser);
-      const rawUser = tgUser.username ? `@${tgUser.username}` : '';
-      const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || rawUser || 'Telegram User';
+      const rawUser = tgUser.username ? `@${tgUser.username}` : `@id${tgUser.id}`;
 
-      if (rawUser) {
-        if (isAdminTelegram(rawUser)) {
-          loginAsAdmin();
-        } else {
-          loginWithTelegram(rawUser, fullName);
-        }
+      if (rawUser && isAdminTelegram(rawUser)) {
+        loginAsAdmin();
       }
     }
 
@@ -253,6 +275,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       cleanup();
     };
   }, []);
+
+  const currentUser = users.find(u => u.id === currentUserId) || GUEST_STUDENT_USER;
+
+  // Guarantee pop-up Telegram login widget on app launch for unauthenticated visitors
+  useEffect(() => {
+    const isUnauthenticated = currentUserId === 'guest-student' || !currentUser.telegramUsername;
+    if (isUnauthenticated) {
+      const timer = setTimeout(() => {
+        setShowTelegramAuthModal(true);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [currentUserId, currentUser.telegramUsername]);
 
   // Check if subscription has expired and sync status
   useEffect(() => {
@@ -315,7 +350,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return translate(key, language, defaultText);
   };
 
-  const currentUser = users.find(u => u.id === currentUserId) || GUEST_STUDENT_USER;
   const quizScores = userQuizScores[currentUser.id] || {};
 
   // Only @EximmanAbdIstad is designated administrator
@@ -464,19 +498,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const loginWithTelegram = (telegramUsername: string, fullName?: string, phoneNumber?: string) => {
     const formatted = formatTelegramHandle(telegramUsername);
+    const normalized = normalizeTelegramUsername(formatted);
 
-    if (isAdminTelegram(formatted)) {
+    // Prevent direct text bypass to admin account without verified credentials
+    if (normalized === ADMIN_TELEGRAM_NORMALIZED) {
+      const tgUser = getTelegramUser();
+      const isTgAdmin = Boolean(tgUser?.username) && normalizeTelegramUsername(tgUser?.username || '') === ADMIN_TELEGRAM_NORMALIZED;
+      if (!isTgAdmin) {
+        console.warn('Administrator (@EximmanAbdIstad) login requires verified Telegram session or official widget.');
+        return;
+      }
       loginAsAdmin();
       return;
     }
 
+    const now = new Date().toISOString();
+
     setUsers(prev => {
-      const match = prev.find(
-        u => normalizeTelegramUsername(u.telegramUsername) === normalizeTelegramUsername(formatted)
+      const matchIdx = prev.findIndex(
+        u => normalizeTelegramUsername(u.telegramUsername) === normalized
       );
-      if (match) {
-        setCurrentUserId(match.id);
-        return prev;
+      if (matchIdx >= 0) {
+        const copy = [...prev];
+        const existing = copy[matchIdx];
+        copy[matchIdx] = {
+          ...existing,
+          fullName: fullName?.trim() || existing.fullName || formatted,
+          phoneNumber: phoneNumber?.trim() || existing.phoneNumber || '',
+          lastLoginAt: now
+        };
+        setCurrentUserId(existing.id);
+        return copy;
       }
 
       const newUser: UserProfile = {
@@ -486,7 +538,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         phoneNumber: phoneNumber?.trim() || '',
         role: 'user',
         subscriptionStatus: 'free_trial',
-        registeredAt: new Date().toISOString(),
+        registeredAt: now,
+        lastLoginAt: now,
         expiresAt: null,
         paymentAmount: 0,
         completedChapters: []
@@ -499,43 +552,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const loginWithTelegramWidget = (widgetUser: TelegramWidgetUser) => {
     const rawHandle = widgetUser.username ? `@${widgetUser.username}` : `@id${widgetUser.id}`;
     const formatted = formatTelegramHandle(rawHandle);
+    const normalized = normalizeTelegramUsername(formatted);
     const fullName = [widgetUser.first_name, widgetUser.last_name].filter(Boolean).join(' ') || formatted;
+    const now = new Date().toISOString();
 
-    if (isAdminTelegram(formatted)) {
-      loginAsAdmin();
+    if (normalized === ADMIN_TELEGRAM_NORMALIZED) {
+      setUsers(prev => {
+        const hasAdmin = prev.some(u => normalizeTelegramUsername(u.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED);
+        if (!hasAdmin) return [ADMIN_USER, ...prev];
+        return prev.map(u =>
+          normalizeTelegramUsername(u.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED
+            ? { ...u, role: 'admin' as const, subscriptionStatus: 'active_paid' as const, fullName, lastLoginAt: now }
+            : u
+        );
+      });
+      setCurrentUserId('admin-eximman-abdistad');
+      setActiveNavTab('admin');
       return { success: true, message: 'Authenticated as Administrator (@EximmanAbdIstad)', role: 'admin' as const };
     }
 
-    const matched = users.find(
-      u => normalizeTelegramUsername(u.telegramUsername) === normalizeTelegramUsername(formatted)
-    );
+    let targetUserId = '';
+    setUsers(prev => {
+      const matchIdx = prev.findIndex(
+        u => normalizeTelegramUsername(u.telegramUsername) === normalized
+      );
 
-    if (matched) {
-      if (!matched.fullName || matched.fullName === formatted) {
-        setUsers(prev => prev.map(u => (u.id === matched.id ? { ...u, fullName } : u)));
+      if (matchIdx >= 0) {
+        const copy = [...prev];
+        const target = copy[matchIdx];
+        targetUserId = target.id;
+        copy[matchIdx] = {
+          ...target,
+          fullName: fullName || target.fullName,
+          lastLoginAt: now
+        };
+        return copy;
       }
-      switchUser(matched.id);
-      return { success: true, message: `Welcome back, ${matched.fullName || fullName}!`, role: 'user' as const };
+
+      const newUser: UserProfile = {
+        id: `tg-${widgetUser.id || Date.now()}`,
+        fullName,
+        telegramUsername: formatted,
+        phoneNumber: '',
+        role: 'user',
+        subscriptionStatus: 'free_trial',
+        registeredAt: now,
+        lastLoginAt: now,
+        expiresAt: null,
+        paymentAmount: 0,
+        completedChapters: []
+      };
+      targetUserId = newUser.id;
+      return [...prev, newUser];
+    });
+
+    if (targetUserId) {
+      setCurrentUserId(targetUserId);
     }
 
-    const newUser: UserProfile = {
-      id: `tg-${widgetUser.id || Date.now()}`,
-      fullName,
-      telegramUsername: formatted,
-      phoneNumber: '',
-      role: 'user',
-      subscriptionStatus: 'free_trial',
-      registeredAt: new Date().toISOString(),
-      expiresAt: null,
-      paymentAmount: 0,
-      completedChapters: []
-    };
-
-    setUsers(prev => [...prev, newUser]);
-    setCurrentUserId(newUser.id);
     return {
       success: true,
-      message: `Enrolled student account for ${fullName} (${formatted}). Free trial activated!`,
+      message: `Welcome, ${fullName}! Your Telegram account (${formatted}) is connected. Continue learning!`,
       role: 'user' as const
     };
   };
@@ -549,25 +626,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fullName?: string;
     phoneNumber?: string;
   }) => {
+    const formatted = formatTelegramHandle(credentials.telegramUsername);
+    const normalized = normalizeTelegramUsername(formatted);
+
+    // Prevent unauthorized hijack of admin account
+    if (normalized === ADMIN_TELEGRAM_NORMALIZED) {
+      const tgUser = getTelegramUser();
+      const isTgAdmin = Boolean(tgUser?.username) && normalizeTelegramUsername(tgUser?.username || '') === ADMIN_TELEGRAM_NORMALIZED;
+      if (!isTgAdmin) {
+        return {
+          success: false,
+          message: 'Administrator (@EximmanAbdIstad) access requires logging in through your verified Telegram account or widget.',
+          role: 'user' as const
+        };
+      }
+      loginAsAdmin();
+      return { success: true, message: 'Logged in as Administrator (@EximmanAbdIstad)', role: 'admin' as const };
+    }
+
     const val = validateTelegramCredentials(
       { telegramUsername: credentials.telegramUsername, phoneNumber: credentials.phoneNumber },
       users
     );
 
-    if (val.role === 'admin') {
-      loginAsAdmin();
-      return { success: true, message: 'Logged in as Administrator (@EximmanAbdIstad)', role: 'admin' as const };
-    }
+    const now = new Date().toISOString();
 
     if (val.status === 'user_matched' && val.user) {
-      switchUser(val.user.id);
+      setUsers(prev =>
+        prev.map(u => (u.id === val.user!.id ? { ...u, lastLoginAt: now } : u))
+      );
+      setCurrentUserId(val.user.id);
+      setActiveNavTab('overview');
       return { success: true, message: `Welcome back, ${val.user.fullName}!`, role: 'user' as const };
     }
 
     loginWithTelegram(credentials.telegramUsername, credentials.fullName, credentials.phoneNumber);
     return {
       success: true,
-      message: `Enrolled student account for ${formatTelegramHandle(credentials.telegramUsername)}. Free trial activated!`,
+      message: `Enrolled student account for ${formatted}. Free trial activated!`,
       role: 'user' as const
     };
   };
@@ -585,6 +681,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             approvedAt: now.toISOString(),
             expiresAt: expiry.toISOString(),
             notes: `Approved by @EximmanAbdIstad for ${days} days until ${expiry.toLocaleDateString()}`
+          };
+        }
+        return u;
+      })
+    );
+  };
+
+  const adminGrantLifetime = (userId: string) => {
+    if (!isAdmin) return;
+    const now = new Date();
+    setUsers(prev =>
+      prev.map(u => {
+        if (u.id === userId) {
+          return {
+            ...u,
+            subscriptionStatus: 'active_paid',
+            approvedAt: now.toISOString(),
+            expiresAt: null,
+            notes: `Granted Lifetime VIP Full Access by @EximmanAbdIstad on ${now.toLocaleDateString()}`
+          };
+        }
+        return u;
+      })
+    );
+  };
+
+  const adminResetToTrial = (userId: string) => {
+    if (!isAdmin) return;
+    setUsers(prev =>
+      prev.map(u => {
+        if (u.id === userId) {
+          return {
+            ...u,
+            subscriptionStatus: 'free_trial',
+            expiresAt: null,
+            notes: `Reset to Free Trial (Chapters 1 & 2) by @EximmanAbdIstad`
           };
         }
         return u;
@@ -629,12 +761,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const switchUser = (userId: string) => {
-    if (!users.some(user => user.id === userId)) return;
+    const target = users.find(user => user.id === userId);
+    if (!target) return;
+
+    // Strict security check: NEVER allow switching to admin account!
+    const isTargetAdmin =
+      target.role === 'admin' ||
+      normalizeTelegramUsername(target.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED;
+
+    if (isTargetAdmin) {
+      if (!isAdmin) {
+        console.warn('Security alert: Unauthorized attempt to switch to admin account blocked.');
+        return;
+      }
+    }
+
+    // "never let users switch accounts to the admin account, don't give other users to switch account to the admin account and get into the app using the admin account. Just let them use the account they logged in only."
+    if (!isAdmin && userId !== currentUserId) {
+      console.warn('Students may only access the account they logged in with.');
+      return;
+    }
+
     setCurrentUserId(userId);
     setActiveNavTab('overview');
   };
 
   const loginAsAdmin = () => {
+    const tgUser = getTelegramUser();
+    const isTgAdmin = Boolean(tgUser?.username) && normalizeTelegramUsername(tgUser?.username || '') === ADMIN_TELEGRAM_NORMALIZED;
+    const isCurrentAdmin = Boolean(currentUser.telegramUsername) && normalizeTelegramUsername(currentUser.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED;
+
+    if (!isTgAdmin && !isCurrentAdmin) {
+      console.warn('Access denied: Only @EximmanAbdIstad can log in as administrator.');
+      return;
+    }
+
     setUsers(prev => {
       const hasAdmin = prev.some(u => normalizeTelegramUsername(u.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED);
       if (!hasAdmin) {
@@ -653,6 +814,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const logout = () => {
     setCurrentUserId('guest-student');
     setActiveNavTab('overview');
+    setShowTelegramAuthModal(true);
+  };
+
+  const handleSetActiveNavTab = (tab: NavTabType) => {
+    const subscriberTabs: NavTabType[] = ['landed_cost', 'lc_calculator', 'tax_calculator', 'incoterms_guide'];
+    if (subscriberTabs.includes(tab) && !hasFullAccess) {
+      setShowPaywallModal(true);
+      return;
+    }
+    setActiveNavTab(tab);
+  };
+
+  const handleSetSelectedChapterId = (id: string) => {
+    setSelectedChapterId(id);
+    const chapter = ALL_CHAPTERS.find(ch => ch.id === id);
+    if (chapter && !chapter.isFreeTrialAccessible && !hasFullAccess) {
+      setShowPaywallModal(true);
+    }
   };
 
   return (
@@ -669,6 +848,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         adminApproveUser,
         adminRejectUser,
         adminExtendUser,
+        adminGrantLifetime,
+        adminResetToTrial,
         switchUser,
         loginAsAdmin,
         logout,
@@ -682,9 +863,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isAdmin,
         hasFullAccess,
         activeNavTab,
-        setActiveNavTab,
+        setActiveNavTab: handleSetActiveNavTab,
         selectedChapterId,
-        setSelectedChapterId,
+        setSelectedChapterId: handleSetSelectedChapterId,
         showPaywallModal,
         setShowPaywallModal,
         showTelegramAuthModal,
