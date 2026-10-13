@@ -20,28 +20,64 @@ import { RecordsTracker } from './components/RecordsTracker';
 import { CertificationView } from './components/CertificationView';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { TelegramAuthModal } from './components/TelegramAuthModal';
-import { AlertTriangle, Send } from 'lucide-react';
+import { AlertTriangle, Send, Clock, CreditCard } from 'lucide-react';
 
 const toolTabs = ['landed_cost', 'lc_calculator', 'tax_calculator', 'incoterms_guide'];
 
 const MainContent: React.FC = () => {
   const {
-    activeNavTab, isAdmin, showPaywallModal, setShowPaywallModal,
-    showTelegramAuthModal, setShowTelegramAuthModal, isTelegramApp
+    activeNavTab, selectedChapterId, isAdmin, showPaywallModal, setShowPaywallModal,
+    showTelegramAuthModal, setShowTelegramAuthModal, isTelegramApp, currentUser, language
   } = useApp();
   const [storageWarning, setStorageWarning] = useState(false);
+
+  // Ensure pages and chapters always start from the top when navigating
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [activeNavTab, selectedChapterId]);
 
   useEffect(() => {
     const warn = () => setStorageWarning(true);
     window.addEventListener('academy-storage-error', warn);
     return () => window.removeEventListener('academy-storage-error', warn);
   }, []);
+
+  const daysLeft = currentUser.expiresAt && currentUser.subscriptionStatus === 'active_paid'
+    ? Math.max(0, Math.ceil((new Date(currentUser.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
+
   const isTool = toolTabs.includes(activeNavTab);
   const showAdmin = activeNavTab === 'admin' && isAdmin;
 
   return (
     <div className="academy-shell flex min-h-[100dvh] flex-col transition-colors">
       <Navbar />
+
+      {/* 4-Day Expiry App-wide Notification Bar */}
+      {!isAdmin && currentUser.subscriptionStatus === 'active_paid' && daysLeft !== null && daysLeft <= 4 && (
+        <div role="alert" className="border-b-2 border-amber-500 bg-amber-500/15 dark:bg-amber-950/70 px-3 sm:px-4 py-2.5 sm:py-2 text-xs leading-5 text-amber-950 dark:text-amber-100 shadow-2xs">
+          <div className="mx-auto max-w-[1440px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 w-full">
+            <div className="flex items-start sm:items-center gap-2 min-w-0 flex-1">
+              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0 animate-pulse" />
+              <span className="min-w-0">
+                <strong>{language === 'am' ? 'የአባልነት ማሳሰቢያ፦' : 'Subscription Expiry Notice:'}</strong>{' '}
+                {language === 'am'
+                  ? `የ30 ቀናት አባልነትዎ ሊያልቅ ${daysLeft} ${daysLeft === 1 ? 'ቀን' : 'ቀናት'} ብቻ ቀርቷል! ሙሉ ኮርሶችንና የዋጋ ማስያ መሳሪያዎችን ያለማቋረጥ ለመጠቀም አባልነትዎን ያድሱ።`
+                  : `Your 30-day subscription expires in ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}! Please update your subscription now to maintain full course access and cost calculators.`}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowPaywallModal(true)}
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold text-xs transition shrink-0 shadow-2xs"
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              <span>{language === 'am' ? 'አባልነትዎን ያድሱ (3,900 ብር)' : 'Update / Renew Now (3,900 ETB)'}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {storageWarning && (
         <div role="alert" className="border-b border-rose-300 bg-rose-50 px-4 py-2.5 text-xs leading-5 text-rose-900 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-100">

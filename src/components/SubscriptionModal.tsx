@@ -172,15 +172,15 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 xs:p-3 sm:p-4 md:p-6 overflow-y-auto">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="subscription-modal-title"
-        className="w-full max-w-xl my-8 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6 sm:p-7 space-y-6 animate-scale-up"
+        className="w-full max-w-xl my-auto max-h-[96dvh] sm:max-h-[92dvh] flex flex-col bg-white dark:bg-neutral-900 rounded-2xl sm:rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden animate-scale-up"
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-neutral-100 dark:border-neutral-800 pb-4">
+        {/* Header - Stays visible at top */}
+        <div className="shrink-0 flex items-start justify-between gap-3 sm:gap-4 border-b border-neutral-100 dark:border-neutral-800 p-4 sm:p-6 bg-white dark:bg-neutral-900 z-10">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               <Sparkles className="h-4 w-4" />
@@ -190,7 +190,7 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   : 'Full Academy Subscription (30 Days)'}
               </span>
             </div>
-            <h2 id="subscription-modal-title" className="text-xl sm:text-2xl font-serif-title font-bold text-neutral-900 dark:text-neutral-50 mt-1">
+            <h2 id="subscription-modal-title" className="text-lg xs:text-xl sm:text-2xl font-serif-title font-bold text-neutral-900 dark:text-neutral-50 mt-1">
               {currentUser.subscriptionStatus === 'expired'
                 ? 'Your 30-Day Subscription Expired'
                 : 'Unlock All 16 Chapters & Trade Tools'}
@@ -205,11 +205,14 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded-xl p-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="rounded-xl p-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Scrollable Content Body - Fully visible and cleanly scrollable on all screens */}
+        <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-5 sm:space-y-6 academy-scrollbar overscroll-contain">
 
         {/* Full Subscription Plan Card */}
         <div className="relative bg-gradient-to-b from-amber-50/70 to-white dark:from-amber-950/30 dark:to-neutral-900 rounded-3xl border-2 border-amber-600/80 p-5 sm:p-6 space-y-4 shadow-md">
@@ -594,6 +597,7 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
           </form>
         )}
+        </div>
       </div>
     </div>
   );

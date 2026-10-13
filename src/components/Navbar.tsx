@@ -213,17 +213,17 @@ export const Navbar: React.FC = () => {
           {/* Logo */}
           <button
             onClick={() => navigate('overview')}
-            className="group flex min-w-0 items-center gap-1.5 xs:gap-2 sm:gap-3 text-left shrink"
+            className="group flex min-w-0 items-center gap-1.5 xs:gap-2 sm:gap-3 text-left shrink-0 sm:shrink max-w-[62%] xs:max-w-[68%] sm:max-w-none"
             aria-label="Export-Import Logistics Academy overview"
           >
             <span className="flex h-8 w-8 xs:h-9 xs:w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-[10px] sm:rounded-[14px] bg-[#174f49] text-[#efcf9e] shadow-sm transition-transform group-hover:-rotate-3">
               <Ship className="h-4 w-4 xs:h-4.5 xs:w-4.5 sm:h-5 sm:w-5 text-[#efcf9e]" strokeWidth={2.2} />
             </span>
             <span className="min-w-0">
-              <span className="block truncate font-serif-title text-[12px] xs:text-[13.5px] sm:text-base font-extrabold tracking-[-.035em]">
+              <span className="block font-serif-title text-[12px] xs:text-[13px] sm:text-[15px] md:text-base font-extrabold tracking-[-.025em] leading-tight text-neutral-900 dark:text-neutral-50 whitespace-normal">
                 {language === 'am' ? 'የላኪና አስመጪ ሎጂስቲክስ አካዳሚ' : 'Export-Import Logistics Academy'}
               </span>
-              <span className="mt-0.5 hidden xs:block text-[8.5px] sm:text-[9px] font-bold uppercase tracking-[.15em] academy-muted truncate">
+              <span className="mt-0.5 hidden sm:block text-[8.5px] sm:text-[9px] font-bold uppercase tracking-[.15em] academy-muted truncate">
                 {language === 'am' ? 'የውጭ ንግድና ሎጂስቲክስ ሙያዊ ሥልጠና' : 'Professional Trade Education'}
               </span>
             </span>
@@ -270,20 +270,17 @@ export const Navbar: React.FC = () => {
               </a>
             )}
 
-            {/* Quick Telegram Auth Modal button */}
+            {/* Quick Telegram Auth Modal button - compact on small screens */}
             <button
               type="button"
               onClick={() => setShowTelegramAuthModal(true)}
-              className="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 xs:px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border border-sky-300 dark:border-sky-800 bg-[#229ed9]/15 hover:bg-[#229ed9]/25 text-[#1b7fae] dark:text-[#6cc2e9] text-xs font-semibold transition-colors shrink-0"
+              className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-sky-300 dark:border-sky-800 bg-[#229ed9]/15 hover:bg-[#229ed9]/25 text-[#1b7fae] dark:text-[#6cc2e9] text-xs font-semibold transition-colors shrink-0"
               title="Log in with Telegram account"
               aria-label="Telegram Login"
             >
               <Send className="h-3.5 w-3.5 text-[#229ed9] shrink-0" />
               <span className="hidden sm:inline">
                 {currentUser.telegramUsername ? currentUser.telegramUsername : 'Telegram Login'}
-              </span>
-              <span className="hidden xs:inline sm:hidden text-[11px] font-medium">
-                {currentUser.telegramUsername ? currentUser.telegramUsername.replace(/^@/, '').slice(0, 6) + (currentUser.telegramUsername.length > 7 ? '…' : '') : 'Login'}
               </span>
             </button>
 
@@ -296,17 +293,28 @@ export const Navbar: React.FC = () => {
               >
                 <span>
                   {currentUser.subscriptionStatus === 'expired'
-                    ? 'Renew (3,900 ETB · 60% Off)'
-                    : 'Subscribe (3,900 ETB · 60% Off)'}
+                    ? (language === 'am' ? 'ያድሱ (3,900 ብር)' : 'Renew (3,900 ETB)')
+                    : (language === 'am' ? 'ይመዝገቡ (3,900 ብር)' : 'Subscribe (3,900 ETB)')}
                 </span>
               </button>
             )}
 
-            {/* Amharic - English Language Switcher Button */}
+            {/* Responsive Language Switcher - compact on mobile, dual pills on tablet/desktop */}
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="inline-flex sm:hidden items-center gap-1 px-2 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100/90 dark:bg-neutral-800/90 text-[11px] font-bold text-amber-800 dark:text-amber-300 shrink-0 hover:bg-neutral-200 dark:hover:bg-neutral-700 shadow-2xs"
+              title={language === 'am' ? 'Switch to English' : 'ወደ አማርኛ ቀይር'}
+              aria-label="Toggle language"
+            >
+              <Languages className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+              <span>{language === 'am' ? 'EN' : 'አማ'}</span>
+            </button>
+
             <div
               role="group"
               aria-label="Language selection"
-              className="inline-flex items-center p-0.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100/90 dark:bg-neutral-800/90 shrink-0 shadow-2xs"
+              className="hidden sm:inline-flex items-center p-0.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100/90 dark:bg-neutral-800/90 shrink-0 shadow-2xs"
             >
               <button
                 type="button"

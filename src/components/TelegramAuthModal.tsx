@@ -142,21 +142,21 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 xs:p-3 sm:p-4 overflow-y-auto">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="telegram-auth-title"
-        className="w-full max-w-md my-8 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6 sm:p-7 space-y-5 animate-scale-up"
+        className="w-full max-w-md my-auto max-h-[96dvh] sm:max-h-[92dvh] flex flex-col bg-white dark:bg-neutral-900 rounded-2xl sm:rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden animate-scale-up"
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-neutral-100 dark:border-neutral-800 pb-3">
+        {/* Header - Fixed at Top */}
+        <div className="shrink-0 flex items-start justify-between gap-4 border-b border-neutral-100 dark:border-neutral-800 p-4 sm:p-5 bg-white dark:bg-neutral-900 z-10">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#229ed9] text-white shadow-sm">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#229ed9] text-white shadow-sm shrink-0">
               <Send className="h-5 w-5" />
             </span>
             <div>
-              <h2 id="telegram-auth-title" className="text-lg font-serif-title font-bold text-neutral-900 dark:text-neutral-50">
+              <h2 id="telegram-auth-title" className="text-base sm:text-lg font-serif-title font-bold text-neutral-900 dark:text-neutral-50">
                 Telegram Login
               </h2>
               <p className="text-[11px] text-neutral-500">
@@ -168,11 +168,14 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Scrollable Content Body */}
+        <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-5 academy-scrollbar overscroll-contain">
 
         {/* Telegram Mini App Native Profile Badge if detected */}
         {isTelegramApp && telegramWebAppUser && (
@@ -386,6 +389,7 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="text-[10px] text-neutral-400 border-t border-neutral-100 dark:border-neutral-800 pt-2 flex items-center justify-between">
           <span>Active user: {currentUser.telegramUsername}</span>
           <span className="capitalize">{currentUser.role}</span>
+        </div>
         </div>
       </div>
     </div>

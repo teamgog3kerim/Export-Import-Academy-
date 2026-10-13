@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { COURSE_MODULES } from '../data/courseData';
 import { Chapter, QuizQuestion } from '../types';
@@ -9,6 +9,7 @@ import {
   Clock,
   Sparkles,
   ArrowRight,
+  ArrowLeft,
   HelpCircle,
   Briefcase,
   AlertCircle,
@@ -61,6 +62,34 @@ export const CourseViewer: React.FC = () => {
   }
 
   const isLocked = !hasFullAccess && !currentChapter.isFreeTrialAccessible;
+
+  // Flattened chapters array for sequential next/prev navigation
+  const allChapters = COURSE_MODULES.flatMap(m => m.chapters);
+  const currentIndex = allChapters.findIndex(c => c.id === currentChapter.id);
+  const prevChapter = currentIndex > 0 ? allChapters[currentIndex - 1] : null;
+  const nextChapter = currentIndex < allChapters.length - 1 ? allChapters[currentIndex + 1] : null;
+
+  // Ensure scroll starts from top when changing chapter or tab
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [selectedChapterId, activeTab]);
+
+  const handleNavigateChapter = (targetChapter: Chapter) => {
+    if (!targetChapter) return;
+    if (!hasFullAccess && !targetChapter.isFreeTrialAccessible) {
+      setShowPaywallModal(true);
+      return;
+    }
+    setSelectedChapterId(targetChapter.id);
+    setActiveTab('study');
+    setShowResults(false);
+    setSelectedAnswers({});
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
 
   const toggleModuleCollapse = (modId: string) => {
     setCollapsedModules(prev => ({ ...prev, [modId]: !prev[modId] }));
@@ -290,7 +319,36 @@ export const CourseViewer: React.FC = () => {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Back / Next Quick Controls */}
+              <div className="inline-flex items-center rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 p-0.5 text-xs shadow-2xs">
+                <button
+                  type="button"
+                  disabled={!prevChapter}
+                  onClick={() => prevChapter && handleNavigateChapter(prevChapter)}
+                  className="px-2.5 py-1 font-semibold flex items-center gap-1 text-neutral-700 dark:text-neutral-300 hover:text-amber-700 dark:hover:text-amber-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-lg"
+                  title={prevChapter ? `Previous: Chapter ${prevChapter.chapterNumber}` : undefined}
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>{language === 'am' ? 'ወደ ኋላ' : 'Back'}</span>
+                </button>
+                <div className="w-px h-3.5 bg-neutral-200 dark:bg-neutral-700 mx-0.5" />
+                <button
+                  type="button"
+                  disabled={!nextChapter}
+                  onClick={() => nextChapter && handleNavigateChapter(nextChapter)}
+                  className="px-2.5 py-1 font-semibold flex items-center gap-1 text-neutral-700 dark:text-neutral-300 hover:text-amber-700 dark:hover:text-amber-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-lg"
+                  title={nextChapter ? `Next: Chapter ${nextChapter.chapterNumber}` : undefined}
+                >
+                  <span>{language === 'am' ? 'ቀጣይ' : 'Next'}</span>
+                  {!hasFullAccess && nextChapter && !nextChapter.isFreeTrialAccessible ? (
+                    <Lock className="w-3 h-3 text-amber-600" />
+                  ) : (
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+
               <button
                 onClick={() => toggleChapterComplete(currentChapter.id)}
                 className={`px-3 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border shadow-2xs ${
@@ -1033,20 +1091,7 @@ export const CourseViewer: React.FC = () => {
                   ) : (
                     <button
                       onClick={() => {
-                        // find next chapter if available
-                        const allChapters = COURSE_MODULES.flatMap(m => m.chapters);
-                        const currentIndex = allChapters.findIndex(c => c.id === currentChapter.id);
-                        if (currentIndex < allChapters.length - 1) {
-                          const nextCh = allChapters[currentIndex + 1];
-                          if (nextCh && !hasFullAccess && !nextCh.isFreeTrialAccessible) {
-                            setShowPaywallModal(true);
-                            return;
-                          }
-                          setSelectedChapterId(nextCh.id);
-                          setActiveTab('study');
-                          setShowResults(false);
-                          setSelectedAnswers({});
-                        }
+                        if (nextChapter) handleNavigateChapter(nextChapter);
                       }}
                       className="flex items-center gap-2 px-5 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
                     >
@@ -1080,6 +1125,94 @@ export const CourseViewer: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* Bottom Course-to-Course Navigation Footer (Back & Next Buttons) */}
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {prevChapter ? (
+            <button
+              type="button"
+              onClick={() => handleNavigateChapter(prevChapter)}
+              className="flex items-center gap-3 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/60 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-left transition-colors group flex-1"
+            >
+              <div className="h-9 w-9 rounded-lg bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 flex items-center justify-center shrink-0 group-hover:border-amber-500 transition-colors">
+                <ArrowLeft className="w-4 h-4 text-neutral-600 dark:text-neutral-300 group-hover:text-amber-600 transition-colors" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                  {language === 'am' ? 'የቀደመው ምዕራፍ' : 'Previous Chapter'}
+                </div>
+                <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                  Ch {prevChapter.chapterNumber}: {CHAPTER_TRANSLATIONS[prevChapter.id]?.title[language] || prevChapter.title}
+                </div>
+              </div>
+            </button>
+          ) : (
+            <div className="hidden sm:block flex-1" />
+          )}
+
+          <div className="text-center px-3 py-1 shrink-0">
+            <div className="text-xs font-mono font-bold text-neutral-800 dark:text-neutral-200">
+              {language === 'am' ? `ምዕራፍ ${currentChapter.chapterNumber} ከ 16` : `Chapter ${currentChapter.chapterNumber} of 16`}
+            </div>
+            <div className="text-[11px] text-neutral-500 dark:text-neutral-400">
+              {currentModule.title}
+            </div>
+          </div>
+
+          {nextChapter ? (
+            <button
+              type="button"
+              onClick={() => handleNavigateChapter(nextChapter)}
+              className={`flex items-center justify-end gap-3 p-3 rounded-xl border text-right transition-colors group flex-1 ${
+                !hasFullAccess && !nextChapter.isFreeTrialAccessible
+                  ? 'border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/20 hover:bg-amber-100/80'
+                  : 'border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/60 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+              }`}
+            >
+              <div className="min-w-0 text-right">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 flex items-center justify-end gap-1.5">
+                  <span>{language === 'am' ? 'ቀጣዩ ምዕራፍ' : 'Next Chapter'}</span>
+                  {!hasFullAccess && !nextChapter.isFreeTrialAccessible && (
+                    <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950 px-1.5 py-0.2 rounded border border-amber-300 dark:border-amber-800">
+                      30-Day Pass
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                  Ch {nextChapter.chapterNumber}: {CHAPTER_TRANSLATIONS[nextChapter.id]?.title[language] || nextChapter.title}
+                </div>
+              </div>
+              <div className="h-9 w-9 rounded-lg bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 flex items-center justify-center shrink-0 group-hover:border-amber-500 transition-colors">
+                {!hasFullAccess && !nextChapter.isFreeTrialAccessible ? (
+                  <Lock className="w-4 h-4 text-amber-600" />
+                ) : (
+                  <ArrowRight className="w-4 h-4 text-neutral-600 dark:text-neutral-300 group-hover:text-amber-600 transition-colors" />
+                )}
+              </div>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveNavTab('certificate');
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+              }}
+              className="flex items-center justify-end gap-3 p-3 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100/80 text-right transition-colors group flex-1"
+            >
+              <div className="min-w-0 text-right">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  {language === 'am' ? 'ስልጠናውን አጠናቀዋል!' : 'All 16 Chapters Completed!'}
+                </div>
+                <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                  {language === 'am' ? 'የምስክር ወረቀትዎን ይውሰዱ' : 'Claim Official Certificate'}
+                </div>
+              </div>
+              <div className="h-9 w-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <Award className="w-4 h-4" />
+              </div>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -14,7 +14,8 @@ import {
   Sparkles,
   Send,
   User,
-  ExternalLink
+  CreditCard,
+  Clock
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COURSE_MODULES } from '../data/courseData';
@@ -92,8 +93,42 @@ export const LearningDashboard: React.FC = () => {
     }
   };
 
+  const daysLeft = currentUser.expiresAt && currentUser.subscriptionStatus === 'active_paid'
+    ? Math.max(0, Math.ceil((new Date(currentUser.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
+
   return (
     <div className="academy-enter space-y-6 pb-8">
+      {/* 4-Day Expiry Notification Banner */}
+      {!isAdmin && currentUser.subscriptionStatus === 'active_paid' && daysLeft !== null && daysLeft <= 4 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-amber-500/15 dark:bg-amber-950/50 border-2 border-amber-500 text-amber-950 dark:text-amber-100 shadow-sm animate-pulse-subtle">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white shrink-0 shadow-xs">
+              <Clock className="h-5 w-5" />
+            </span>
+            <div className="text-xs sm:text-sm min-w-0">
+              <span className="font-extrabold text-amber-900 dark:text-amber-200">
+                {language === 'am'
+                  ? `አስቸኳይ ማሳሰቢያ፦ የ30 ቀናት አባልነትዎ ሊያልቅ ${daysLeft} ${daysLeft === 1 ? 'ቀን' : 'ቀናት'} ብቻ ቀርቷል!`
+                  : `Subscription Notice: Only ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} remaining on your 30-day access!`}
+              </span>
+              <p className="text-amber-800/90 dark:text-amber-300/90 text-xs mt-0.5">
+                {language === 'am'
+                  ? 'ሁሉንም 16 ምዕራፎችና የዋጋ ማስያ መሳሪያዎችን ያለማቋረጥ ለመጠቀም አባልነትዎን አሁኑኑ ያድሱ (3,900 ብር)'
+                  : 'Please update your subscription now to retain access to all 16 chapters, cost calculators, and tools (3,900 ETB / 30 days).'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowPaywallModal(true)}
+            className="shrink-0 self-start sm:self-auto px-4 py-2 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white rounded-xl text-xs sm:text-sm font-bold transition shadow-xs flex items-center gap-1.5"
+          >
+            <CreditCard className="h-4 w-4" />
+            <span>{language === 'am' ? 'አባልነትዎን ያድሱ (3,900 ብር)' : 'Update Subscription (3,900 ETB)'}</span>
+          </button>
+        </div>
+      )}
+
       {/* Expired Subscription Banner */}
       {!isAdmin && currentUser.subscriptionStatus === 'expired' && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-500/80 text-amber-950 dark:text-amber-200 shadow-2xs">
@@ -118,38 +153,6 @@ export const LearningDashboard: React.FC = () => {
           </button>
         </div>
       )}
-
-      {/* Telegram Channel Invitation Banner (Compact & To The Point) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-sky-50/90 dark:bg-sky-950/40 border border-sky-200/90 dark:border-sky-800/80 text-sky-950 dark:text-sky-100 shadow-2xs">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#229ed9]/15 text-[#1b7fae] dark:text-[#6cc2e9] shrink-0">
-            <Send className="h-3.5 w-3.5 text-[#229ed9]" />
-          </span>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0 text-xs">
-            <span className="font-bold text-sky-950 dark:text-sky-100">
-              {language === 'am' ? 'የቴሌግራም ቻናል' : 'Official Telegram Channel'}
-            </span>
-            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#229ed9]/20 text-[#1b7fae] dark:text-[#6cc2e9]">
-              @eximmanlearn
-            </span>
-            <span className="hidden md:inline text-sky-800/80 dark:text-sky-200/70 text-[11px] truncate">
-              · {language === 'am'
-                ? 'የቀን የውጭ ምንዛሬ መመሪያዎች፣ የጉምሩክ ታሪፍና የንግድ መረጃዎች'
-                : 'Real-time NBE FX directives, customs tariffs & academy updates'}
-            </span>
-          </div>
-        </div>
-        <a
-          href="https://t.me/eximmanlearn"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 self-end sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#229ed9] hover:bg-[#1e8ec3] text-white rounded-lg text-xs font-bold transition shadow-2xs group"
-        >
-          <Send className="h-3 w-3 transition-transform group-hover:scale-110" />
-          <span>{language === 'am' ? 'ቻናሉን ይቀላቀሉ' : 'Join Channel'}</span>
-          <ExternalLink className="h-2.5 w-2.5 opacity-70" />
-        </a>
-      </div>
 
       {/* Main Hero Section */}
       <section className="relative overflow-hidden rounded-[26px] bg-[#174f49] px-6 py-8 text-[#f6f4e9] sm:px-9 sm:py-10 lg:px-12">
@@ -228,7 +231,11 @@ export const LearningDashboard: React.FC = () => {
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#f1d4a5] px-4 py-2.5 text-sm font-bold text-[#243a34] transition hover:bg-[#f8e3c2]"
               >
                 <Play className="h-4 w-4 fill-current" />
-                <span>{language === 'am' ? 'ትምህርቱን ይቀጥሉ' : 'Continue learning'}</span>
+                <span>
+                  {hasFullAccess
+                    ? (language === 'am' ? 'ትምህርቱን ይቀጥሉ' : 'Continue learning')
+                    : (language === 'am' ? 'ትምህርቱን ይቀጥሉ - ነፃ ሙከራ (ምዕራፍ 1 እና 2 ብቻ)' : 'Continue learning - Free trial only Ch 1 and 2')}
+                </span>
                 <ArrowRight className="h-4 w-4" />
               </button>
 
@@ -252,6 +259,27 @@ export const LearningDashboard: React.FC = () => {
                   <span>{language === 'am' ? 'በቴሌግራም ይግቡ' : 'Log in with Telegram'}</span>
                 </button>
               )}
+
+              {/* Line break: places Subscribe button directly below the Continue Learning row */}
+              <div className="w-full basis-full h-0 m-0 p-0" />
+
+              {/* Button below: Subscribe for full courses and cost calculators */}
+              <button
+                type="button"
+                onClick={() => setShowPaywallModal(true)}
+                className="group inline-flex min-h-11 items-center gap-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white px-5 py-2.5 text-sm font-extrabold shadow-md transition-all hover:shadow-lg active:scale-[0.99]"
+              >
+                <CreditCard className="h-4 w-4 text-amber-200 shrink-0 group-hover:scale-110 transition-transform" />
+                <span>
+                  {language === 'am'
+                    ? 'ሙሉ ኮርሶችንና የዋጋ ማስያ መሳሪያዎችን ለማግኘት ይመዝገቡ'
+                    : 'Subscribe for full courses and cost calculators'}
+                </span>
+                <span className="hidden xs:inline-block ml-1 px-2.5 py-0.5 rounded-full bg-amber-900/60 text-[11px] font-semibold text-amber-100 border border-amber-300/30">
+                  {language === 'am' ? '3,900 ብር · 30 ቀናት' : '3,900 ETB · 30 Days'}
+                </span>
+                <ArrowRight className="h-4 w-4 text-amber-200 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+              </button>
             </div>
           </div>
 
