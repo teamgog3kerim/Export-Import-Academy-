@@ -229,18 +229,18 @@ export const Navbar: React.FC = () => {
   return (
     <header className="no-print relative z-40 border-b academy-line bg-[var(--paper)]">
       <div className="mx-auto max-w-[1440px] px-2 sm:px-4 md:px-6 xl:px-8">
-        <div className="flex min-h-[54px] xs:min-h-[58px] sm:min-h-[64px] md:min-h-[68px] w-full items-center justify-between gap-1 xs:gap-1.5 sm:gap-3 md:gap-4">
+        <div className="flex min-h-[50px] xs:min-h-[56px] sm:min-h-[64px] md:min-h-[68px] w-full min-w-0 items-center justify-between gap-1 xs:gap-1.5 sm:gap-3 md:gap-4">
           {/* Logo */}
           <button
             onClick={() => navigate('overview')}
-            className="group flex min-w-0 items-center gap-1.5 xs:gap-2 sm:gap-3 text-left shrink-0 sm:shrink max-w-[62%] xs:max-w-[68%] sm:max-w-none"
+            className="group flex min-w-0 flex-1 sm:flex-initial items-center gap-1.5 xs:gap-2 sm:gap-3 text-left"
             aria-label="Export-Import Logistics Academy overview"
           >
             <span className="flex h-8 w-8 xs:h-9 xs:w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-[10px] sm:rounded-[14px] bg-[#174f49] text-[#efcf9e] shadow-sm transition-transform group-hover:-rotate-3">
               <Ship className="h-4 w-4 xs:h-4.5 xs:w-4.5 sm:h-5 sm:w-5 text-[#efcf9e]" strokeWidth={2.2} />
             </span>
-            <span className="min-w-0">
-              <span className="block font-serif-title text-[12px] xs:text-[13px] sm:text-[15px] md:text-base font-extrabold tracking-[-.025em] leading-tight text-neutral-900 dark:text-neutral-50 whitespace-normal">
+            <span className="min-w-0 flex-1">
+              <span className="block font-serif-title text-[11px] xs:text-[12px] sm:text-[14px] md:text-base font-extrabold tracking-[-.02em] leading-tight text-neutral-900 dark:text-neutral-50 whitespace-normal break-words">
                 {language === 'am' ? 'የላኪና አስመጪ ሎጂስቲክስ አካዳሚ' : 'Export-Import Logistics Academy'}
               </span>
               <span className="mt-0.5 hidden sm:block text-[8.5px] sm:text-[9px] font-bold uppercase tracking-[.15em] academy-muted truncate">

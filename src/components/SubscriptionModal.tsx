@@ -50,6 +50,21 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
   );
 
   useEffect(() => {
+    if (isOpen) {
+      if (currentUser.subscriptionStatus === 'rejected') {
+        setSuccessSubmitted(false);
+        setScreenshotData('');
+        setErrorMessage('');
+      } else {
+        setSuccessSubmitted(currentUser.subscriptionStatus === 'pending_approval');
+        if (currentUser.paymentScreenshot) {
+          setScreenshotData(currentUser.paymentScreenshot);
+        }
+      }
+    }
+  }, [isOpen, currentUser.subscriptionStatus, currentUser.paymentScreenshot]);
+
+  useEffect(() => {
     if (isOpen && telegramWebAppUser) {
       if (!telegramUsername && telegramWebAppUser.username) {
         setTelegramUsername(`@${telegramWebAppUser.username}`);
@@ -191,18 +206,24 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               <Sparkles className="h-4 w-4" />
               <span>
-                {currentUser.subscriptionStatus === 'expired'
+                {currentUser.subscriptionStatus === 'rejected'
+                  ? 'Re-upload Correct Payment Screenshot'
+                  : currentUser.subscriptionStatus === 'expired'
                   ? 'Renew Academy Subscription (30 Days)'
                   : 'Full Academy Subscription (30 Days)'}
               </span>
             </div>
             <h2 id="subscription-modal-title" className="text-lg xs:text-xl sm:text-2xl font-serif-title font-bold text-neutral-900 dark:text-neutral-50 mt-1">
-              {currentUser.subscriptionStatus === 'expired'
+              {currentUser.subscriptionStatus === 'rejected'
+                ? 'Upload Correct Payment & Resubmit'
+                : currentUser.subscriptionStatus === 'expired'
                 ? 'Your 30-Day Subscription Expired'
                 : 'Unlock All 16 Chapters & Trade Tools'}
             </h2>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-              {currentUser.subscriptionStatus === 'expired'
+              {currentUser.subscriptionStatus === 'rejected'
+                ? 'Your previous subscription request could not be approved due to a payment transfer failure. Upload your correct telebirr transfer screenshot below to request approval.'
+                : currentUser.subscriptionStatus === 'expired'
                 ? 'Every subscription is valid for 30 days. Renew your access for 3,900 Birr (Promotional 60% Discount!) to continue accessing all lessons, tools, and certification.'
                 : 'Subscribe to access Chapters 3 to 16, Landed Cost Build Up, Letter of Credit, Customs Tax Assessment, and Incoterms Guide.'}
             </p>
@@ -219,6 +240,25 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
         {/* Scrollable Content Body - Fully visible and cleanly scrollable on all screens */}
         <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-5 sm:space-y-6 academy-scrollbar overscroll-contain">
+
+        {/* Payment Transfer Verification Failed Warning Card */}
+        {currentUser.subscriptionStatus === 'rejected' && (
+          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-500 text-xs text-rose-950 dark:text-rose-100 space-y-2.5 animate-fade-in shadow-xs">
+            <div className="flex items-center gap-2 font-bold text-sm text-rose-800 dark:text-rose-300">
+              <AlertCircle className="h-5 w-5 text-rose-600 shrink-0" />
+              <span>Payment Transfer Verification Failed</span>
+            </div>
+            <p className="text-xs leading-relaxed text-rose-900/90 dark:text-rose-200/90 font-medium">
+              {currentUser.paymentRejectedReason || 'The payment transfer could not be verified in telebirr by @EximmanAbdIstad. Please ensure you sent 3,900 ETB to 09 6768 4490 (Abdulkerim), upload the correct payment screenshot below, and re-submit for approval.'}
+            </p>
+            <div className="p-2.5 rounded-xl bg-white/80 dark:bg-neutral-900/80 border border-rose-200 dark:border-rose-800 text-[11px] text-neutral-700 dark:text-neutral-300 flex items-start gap-2">
+              <UploadCloud className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                <strong>Next step:</strong> Take a screenshot of your completed 3,900 ETB telebirr payment transfer to <strong>09 6768 4490 (Abdulkerim)</strong>, upload it below, and click <em>"Resubmit Correct Payment for Approval"</em>.
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* 3-Day Free Trial Milestone Push Banner */}
         {is3DayTrialUser && (
@@ -604,7 +644,9 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
               >
                 <ShieldCheck className="h-4 w-4" />
                 <span>
-                  {currentUser.subscriptionStatus === 'expired'
+                  {currentUser.subscriptionStatus === 'rejected'
+                    ? 'Resubmit Correct Payment for Approval (3,900 ETB)'
+                    : currentUser.subscriptionStatus === 'expired'
                     ? 'Resubscribe for 3,900 Birr (Promotional 60% Discount!)'
                     : 'Submit Subscription for Approval (3,900 ETB · Promotional 60% Discount!)'}
                 </span>

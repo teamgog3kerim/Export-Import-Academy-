@@ -584,6 +584,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           telebirrTxId: data.telebirrTxId?.trim() || target.telebirrTxId,
           paymentScreenshot: data.paymentScreenshot,
           paymentAmount: 3900,
+          paymentRejectedReason: undefined,
+          paymentRejectedAt: undefined,
+          paymentSubmittedAt: now,
           notes: `Telebirr 3,900 ETB payment submitted for @EximmanAbdIstad approval`
         };
         setCurrentUserId(target.id);
@@ -978,73 +981,98 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const adminGrantLifetime = (userId: string) => {
     if (!isAdmin) return;
     const now = new Date();
-    setUsers(prev =>
-      prev.map(u => {
+    setUsers(prev => {
+      const updated = prev.map(u => {
         if (u.id === userId) {
           return {
             ...u,
-            subscriptionStatus: 'active_paid',
+            subscriptionStatus: 'active_paid' as const,
             approvedAt: now.toISOString(),
             expiresAt: null,
             notes: `Granted Lifetime VIP Full Access by @EximmanAbdIstad on ${now.toLocaleDateString()}`
           };
         }
         return u;
-      })
-    );
+      });
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const adminResetToTrial = (userId: string) => {
     if (!isAdmin) return;
-    setUsers(prev =>
-      prev.map(u => {
+    setUsers(prev => {
+      const updated = prev.map(u => {
         if (u.id === userId) {
           return {
             ...u,
-            subscriptionStatus: 'free_trial',
+            subscriptionStatus: 'free_trial' as const,
             expiresAt: null,
             notes: `Reset to Free Trial (Chapters 1 & 2) by @EximmanAbdIstad`
           };
         }
         return u;
-      })
-    );
+      });
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const adminRejectUser = (userId: string, reason?: string) => {
     if (!isAdmin) return;
-    setUsers(prev =>
-      prev.map(u => {
+    const defaultReason =
+      reason ||
+      'Telebirr payment transfer failed or could not be verified. Please upload the correct payment screenshot and try again for subscription approval.';
+    setUsers(prev => {
+      const updated = prev.map(u => {
         if (u.id === userId) {
           return {
             ...u,
-            subscriptionStatus: 'rejected',
-            notes: reason || 'Telebirr payment screenshot could not be verified'
+            subscriptionStatus: 'rejected' as const,
+            paymentRejectedReason: defaultReason,
+            paymentRejectedAt: new Date().toISOString(),
+            notes: `Rejected by @EximmanAbdIstad: ${defaultReason}`
           };
         }
         return u;
+      });
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
+    });
+
+    // Mark notifications for this user as handled
+    setAdminNotifications(prev =>
+      prev.map(n => (n.userId === userId ? { ...n, read: true } : n))
+    );
+
+    // Broadcast instant rejection event so subscriber is immediately notified
+    window.dispatchEvent(
+      new CustomEvent('academy-payment-rejected', {
+        detail: { userId, reason: defaultReason }
       })
     );
   };
 
   const adminExtendUser = (userId: string, days: number = 30) => {
     if (!isAdmin || !Number.isInteger(days) || days < 1) return;
-    setUsers(prev =>
-      prev.map(u => {
+    setUsers(prev => {
+      const updated = prev.map(u => {
         if (u.id === userId) {
           const currentExpiry = u.expiresAt ? new Date(u.expiresAt).getTime() : Date.now();
           const baseTime = Math.max(currentExpiry, Date.now());
           const newExpiry = new Date(baseTime + days * 24 * 60 * 60 * 1000);
           return {
             ...u,
-            subscriptionStatus: 'active_paid',
+            subscriptionStatus: 'active_paid' as const,
             expiresAt: newExpiry.toISOString(),
             notes: `Extended +${days} days by @EximmanAbdIstad until ${newExpiry.toLocaleDateString()}`
           };
         }
         return u;
-      })
-    );
+      });
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const switchUser = (userId: string) => {

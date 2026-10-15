@@ -20,7 +20,7 @@ import { RecordsTracker } from './components/RecordsTracker';
 import { CertificationView } from './components/CertificationView';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { TelegramAuthModal } from './components/TelegramAuthModal';
-import { AlertTriangle, Send, Clock, CreditCard, Bell, Sparkles, CheckCircle2, X } from 'lucide-react';
+import { AlertTriangle, Send, Clock, CreditCard, Bell, Sparkles, CheckCircle2, X, AlertCircle, UploadCloud } from 'lucide-react';
 
 const toolTabs = ['landed_cost', 'lc_calculator', 'tax_calculator', 'incoterms_guide'];
 
@@ -32,6 +32,7 @@ const MainContent: React.FC = () => {
   const [storageWarning, setStorageWarning] = useState(false);
   const [dismissed3DayPush, setDismissed3DayPush] = useState(false);
   const [showApprovalNotice, setShowApprovalNotice] = useState(false);
+  const [showRejectedNotice, setShowRejectedNotice] = useState(true);
 
   // Ensure pages and chapters always start from the top when navigating
   useEffect(() => {
@@ -52,10 +53,24 @@ const MainContent: React.FC = () => {
       const customEv = e as CustomEvent<{ userId: string }>;
       if (customEv.detail?.userId === currentUser.id) {
         setShowApprovalNotice(true);
+        setShowRejectedNotice(false);
       }
     };
     window.addEventListener('academy-user-approved', handleApproved as EventListener);
     return () => window.removeEventListener('academy-user-approved', handleApproved as EventListener);
+  }, [currentUser.id]);
+
+  // Listen for subscription rejection / payment re-upload notification
+  useEffect(() => {
+    const handleRejected = (e: Event) => {
+      const customEv = e as CustomEvent<{ userId: string; reason?: string }>;
+      if (customEv.detail?.userId === currentUser.id) {
+        setShowRejectedNotice(true);
+        setShowApprovalNotice(false);
+      }
+    };
+    window.addEventListener('academy-payment-rejected', handleRejected as EventListener);
+    return () => window.removeEventListener('academy-payment-rejected', handleRejected as EventListener);
   }, [currentUser.id]);
 
   const daysLeft = currentUser.expiresAt && currentUser.subscriptionStatus === 'active_paid'
@@ -112,6 +127,45 @@ const MainContent: React.FC = () => {
                 title={`Instantly activate 30-day access for ${pendingRequests[0].telegramUsername}`}
               >
                 Approve ({pendingRequests[0].telegramUsername})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Transfer Verification Failed Notice for Student */}
+      {!isAdmin && currentUser.subscriptionStatus === 'rejected' && showRejectedNotice && (
+        <div role="alert" className="border-b-2 border-rose-500 bg-gradient-to-r from-rose-700 via-rose-600 to-amber-700 text-white px-3 sm:px-4 py-2.5 sm:py-3 text-xs leading-5 shadow-md animate-fade-in">
+          <div className="mx-auto max-w-[1440px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 w-full">
+            <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-white shrink-0 mt-0.5 sm:mt-0 animate-pulse">
+                <AlertCircle className="h-4 w-4 text-amber-200" />
+              </span>
+              <div className="min-w-0">
+                <strong className="block sm:inline font-bold">
+                  {language === 'am' ? '⚠️ የክፍያ ማረጋገጫ አልተሳካም፦' : '⚠️ Payment Verification Issue:'}
+                </strong>{' '}
+                <span>
+                  {currentUser.paymentRejectedReason || (language === 'am'
+                    ? 'የቴሌብር ክፍያ ማስተላለፍ ስክሪንሾት ማረጋገጥ አልተቻለም። እባክዎ ትክክለኛውን የክፍያ ስክሪንሾት እንደገና በመጫን ማጽደቂያ ይጠይቁ።'
+                    : 'Your subscription request was rejected due to a payment transfer verification issue. Please upload the correct payment screenshot and try again for approval.')}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+              <button
+                onClick={() => setShowPaywallModal(true)}
+                className="px-3.5 py-1.5 bg-white text-rose-800 hover:bg-neutral-100 rounded-lg font-bold text-xs transition shadow-2xs flex items-center gap-1.5"
+              >
+                <UploadCloud className="h-3.5 w-3.5 text-amber-600" />
+                <span>{language === 'am' ? 'ትክክለኛውን ክፍያ ይጫኑ' : 'Upload Payment & Try Again'}</span>
+              </button>
+              <button
+                onClick={() => setShowRejectedNotice(false)}
+                className="p-1 rounded hover:bg-rose-800 transition"
+                aria-label="Dismiss notice"
+              >
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>

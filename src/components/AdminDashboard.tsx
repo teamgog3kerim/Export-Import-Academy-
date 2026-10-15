@@ -25,7 +25,8 @@ import {
   Share2,
   Trash2,
   Bell,
-  AlertTriangle
+  AlertTriangle,
+  UploadCloud
 } from 'lucide-react';
 import {
   formatTelegramHandle,
@@ -324,6 +325,22 @@ export const AdminDashboard: React.FC = () => {
                     title="Grant Lifetime VIP"
                   >
                     VIP
+                  </button>
+                  <button
+                    onClick={() => {
+                      adminRejectUser(
+                        user.id,
+                        'Payment transfer failed or could not be verified in telebirr. Please upload the correct telebirr payment screenshot and try again for subscription approval.'
+                      );
+                      setDeleteNotice(
+                        `Rejected ${user.fullName} due to payment transfer failure. User notified to upload correct payment screenshot.`
+                      );
+                    }}
+                    className="py-2 px-2.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/80 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-800 rounded-xl font-bold text-xs transition flex items-center gap-1"
+                    title="Reject and notify user to upload correct payment screenshot"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Upload Payment</span>
                   </button>
                   <button
                     onClick={() => adminRejectUser(user.id)}
@@ -902,6 +919,22 @@ export const AdminDashboard: React.FC = () => {
                                 Lifetime VIP
                               </button>
                               <button
+                                onClick={() => {
+                                  adminRejectUser(
+                                    user.id,
+                                    'Payment transfer failed or could not be verified in telebirr. Please upload the correct telebirr payment screenshot and try again for subscription approval.'
+                                  );
+                                  setDeleteNotice(
+                                    `Rejected ${user.fullName} due to payment transfer failure. User notified to upload correct payment screenshot.`
+                                  );
+                                }}
+                                className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/80 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-800 rounded-lg font-bold text-[11px] transition-colors flex items-center gap-1"
+                                title="Reject and request user to upload correct payment screenshot"
+                              >
+                                <UploadCloud className="w-3 h-3 text-amber-600" />
+                                <span>Upload Payment</span>
+                              </button>
+                              <button
                                 onClick={() => adminRejectUser(user.id)}
                                 className="px-2 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 text-rose-600 rounded-lg font-medium text-[11px] transition-colors"
                               >
@@ -1035,12 +1068,50 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="bg-neutral-100 dark:bg-neutral-800 rounded-2xl p-2 max-h-96 overflow-y-auto text-center">
-              {selectedProofUser.paymentScreenshot ? (
+              {selectedProofUser.paymentScreenshot && selectedProofUser.paymentScreenshot !== 'simulated_payment_proof' ? (
                 <img
                   src={selectedProofUser.paymentScreenshot}
                   alt="Receipt"
                   className="max-h-88 mx-auto rounded-xl object-contain shadow-sm"
                 />
+              ) : selectedProofUser.paymentScreenshot === 'simulated_payment_proof' ? (
+                <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-5 max-w-sm mx-auto shadow-sm text-left space-y-3">
+                  <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-[#e31e24] text-white text-[10px] font-bold">telebirr</span>
+                    <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Completed Transfer</span>
+                    </span>
+                  </div>
+                  <div className="text-center py-2">
+                    <span className="text-2xl font-serif-title font-bold text-neutral-900 dark:text-neutral-100">
+                      3,900.00 ETB
+                    </span>
+                    <span className="block text-[11px] text-neutral-500">Academy 30-Day Subscription (60% Off)</span>
+                  </div>
+                  <div className="space-y-1.5 text-xs border-t border-neutral-100 dark:border-neutral-800 pt-2 font-mono">
+                    <div className="flex justify-between text-neutral-500">
+                      <span>Sender:</span>
+                      <span className="text-neutral-800 dark:text-neutral-200 font-sans font-medium">{selectedProofUser.fullName}</span>
+                    </div>
+                    <div className="flex justify-between text-neutral-500">
+                      <span>Sender Phone:</span>
+                      <span className="text-neutral-800 dark:text-neutral-200">{selectedProofUser.phoneNumber}</span>
+                    </div>
+                    <div className="flex justify-between text-neutral-500">
+                      <span>Receiver:</span>
+                      <span className="text-neutral-800 dark:text-neutral-200 font-sans font-medium">Abdulkerim (@EximmanAbdIstad)</span>
+                    </div>
+                    <div className="flex justify-between text-neutral-500">
+                      <span>Receiver Phone:</span>
+                      <span className="text-neutral-800 dark:text-neutral-200">09 6768 4490</span>
+                    </div>
+                    <div className="flex justify-between text-neutral-500">
+                      <span>Tx ID:</span>
+                      <span className="text-neutral-800 dark:text-neutral-200">{selectedProofUser.telebirrTxId || 'TB98234123'}</span>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="p-8 text-neutral-400 text-xs">
                   No image attached.
@@ -1058,12 +1129,36 @@ export const AdminDashboard: React.FC = () => {
                     Tx Ref: {selectedProofUser.telebirrTxId}
                   </span>
                 )}
+                {selectedProofUser.paymentRejectedReason && (
+                  <span className="text-[10px] text-rose-600 dark:text-rose-400 block mt-0.5 font-medium">
+                    Prior Rejection: {selectedProofUser.paymentRejectedReason}
+                  </span>
+                )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 justify-end w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    adminRejectUser(
+                      selectedProofUser.id,
+                      'Payment transfer failed or could not be verified in telebirr. Please upload the correct telebirr payment screenshot and try again for subscription approval.'
+                    );
+                    setDeleteNotice(
+                      `Subscription request for ${selectedProofUser.fullName} (${selectedProofUser.telegramUsername}) rejected due to payment transfer failure. User has been notified to upload correct payment screenshot.`
+                    );
+                    setSelectedProofUser(null);
+                  }}
+                  className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white rounded-xl text-xs font-bold transition-colors shadow-2xs flex items-center gap-1.5"
+                  title="Reject due to failure in payment transfer & notify user to upload correct screenshot"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>Upload Payment</span>
+                </button>
                 <button
                   onClick={() => {
-                    adminRejectUser(selectedProofUser.id);
+                    adminRejectUser(selectedProofUser.id, 'Subscription request declined');
+                    setDeleteNotice(`Declined request for ${selectedProofUser.fullName}.`);
                     setSelectedProofUser(null);
                   }}
                   className="px-3 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-rose-50 text-rose-600 rounded-xl text-xs font-semibold"
@@ -1073,11 +1168,13 @@ export const AdminDashboard: React.FC = () => {
                 <button
                   onClick={() => {
                     adminApproveUser(selectedProofUser.id, 30);
+                    setDeleteNotice(`Approved 30-day access for ${selectedProofUser.fullName} (${selectedProofUser.telegramUsername})!`);
                     setSelectedProofUser(null);
                   }}
-                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-colors shadow-2xs"
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-colors shadow-2xs flex items-center gap-1.5"
                 >
-                  Approve 30 Days Access
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Approve 30 Days Access</span>
                 </button>
               </div>
             </div>

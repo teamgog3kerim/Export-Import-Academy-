@@ -17,6 +17,9 @@ export interface UserProfile {
   paymentScreenshot?: string;
   paymentAmount: number;
   approvedAt?: string;
+  paymentRejectedReason?: string;
+  paymentRejectedAt?: string;
+  paymentSubmittedAt?: string;
   notes?: string;
   completedChapters?: string[]; // IDs of completed chapters
   certificateIssuedAt?: string;

@@ -57,6 +57,19 @@ export const SubscriptionView: React.FC = () => {
   );
 
   useEffect(() => {
+    if (currentUser.subscriptionStatus === 'rejected') {
+      setIsSubmittedSuccess(false);
+      setScreenshotData('');
+      setErrorMessage('');
+    } else {
+      setIsSubmittedSuccess(currentUser.subscriptionStatus === 'pending_approval');
+      if (currentUser.paymentScreenshot) {
+        setScreenshotData(currentUser.paymentScreenshot);
+      }
+    }
+  }, [currentUser.subscriptionStatus, currentUser.paymentScreenshot]);
+
+  useEffect(() => {
     if (telegramWebAppUser) {
       if (!telegramUsername && telegramWebAppUser.username) {
         setTelegramUsername(`@${telegramWebAppUser.username}`);
@@ -211,6 +224,11 @@ export const SubscriptionView: React.FC = () => {
               <Clock className="h-3.5 w-3.5" />
               <span>Pending @EximmanAbdIstad Approval</span>
             </span>
+          ) : currentUser.subscriptionStatus === 'rejected' ? (
+            <span className="px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold flex items-center gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5" />
+              <span>Payment Failed (Upload Payment to Retry)</span>
+            </span>
           ) : currentUser.subscriptionStatus === 'expired' ? (
             <span className="px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold flex items-center gap-1.5">
               <AlertCircle className="h-3.5 w-3.5" />
@@ -223,6 +241,38 @@ export const SubscriptionView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Payment Rejected Alert Banner */}
+      {!isAdmin && currentUser.subscriptionStatus === 'rejected' && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-500 text-rose-950 dark:text-rose-100 shadow-sm animate-fade-in">
+          <div className="flex items-start sm:items-center gap-3 min-w-0">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-600 text-white shrink-0 shadow-xs">
+              <AlertCircle className="h-5 w-5" />
+            </span>
+            <div className="text-xs sm:text-sm min-w-0">
+              <span className="font-extrabold text-rose-900 dark:text-rose-100 flex items-center gap-2">
+                <span>⚠️ Subscription Request Rejected: Payment Transfer Issue</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-600 text-white">
+                  Action Required
+                </span>
+              </span>
+              <p className="text-rose-950 dark:text-rose-200 text-xs mt-0.5 leading-relaxed font-medium">
+                {currentUser.paymentRejectedReason || 'Administrator @EximmanAbdIstad was unable to verify your telebirr transfer. Please upload the correct payment screenshot and try again for approval.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const fileInput = document.getElementById('payment-upload-input');
+              if (fileInput) fileInput.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="shrink-0 self-start sm:self-auto px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs sm:text-sm font-bold transition shadow-xs flex items-center gap-2"
+          >
+            <UploadCloud className="h-4 w-4" />
+            <span>Upload Payment & Retry</span>
+          </button>
+        </div>
+      )}
 
       {/* Plan Cards Comparison */}
       <div className="grid gap-6 md:grid-cols-2">
@@ -470,7 +520,23 @@ export const SubscriptionView: React.FC = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form id="payment-submission-section" onSubmit={handleSubmit} className="space-y-4">
+            {/* Payment Rejection Alert in Form */}
+            {currentUser.subscriptionStatus === 'rejected' && (
+              <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-500 rounded-2xl text-xs space-y-2 text-rose-900 dark:text-rose-100 animate-fade-in">
+                <div className="flex items-center gap-2 font-bold text-sm text-rose-800 dark:text-rose-300">
+                  <AlertCircle className="h-5 w-5 text-rose-600 shrink-0" />
+                  <span>Previous Payment Verification Failed</span>
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  {currentUser.paymentRejectedReason || 'The payment transfer could not be verified in telebirr. Please attach your correct payment screenshot below.'}
+                </p>
+                <p className="text-[11px] font-semibold text-rose-800 dark:text-rose-300">
+                  Please upload your new correct screenshot of the 3,900 ETB transfer to 09 6768 4490 (Abdulkerim) and resubmit.
+                </p>
+              </div>
+            )}
+
             {errorMessage && (
               <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center gap-2 text-xs text-rose-800 dark:text-rose-200">
                 <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
@@ -649,7 +715,9 @@ export const SubscriptionView: React.FC = () => {
               >
                 <ShieldCheck className="h-4 w-4" />
                 <span>
-                  {currentUser.subscriptionStatus === 'expired'
+                  {currentUser.subscriptionStatus === 'rejected'
+                    ? 'Resubmit Correct Payment for Approval (3,900 ETB)'
+                    : currentUser.subscriptionStatus === 'expired'
                     ? 'Submit 30-Day Resubscription Request (3,900 Birr · 60% Off)'
                     : 'Submit 30-Day Subscription Request (3,900 Birr · Promotional 60% Discount!)'}
                 </span>

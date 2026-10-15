@@ -15,7 +15,9 @@ import {
   Send,
   User,
   CreditCard,
-  Clock
+  Clock,
+  AlertCircle,
+  UploadCloud
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COURSE_MODULES } from '../data/courseData';
@@ -67,6 +69,7 @@ export const LearningDashboard: React.FC = () => {
     if (isAdmin) return language === 'am' ? 'አስተዳዳሪ' : 'Administrator';
     if (currentUser.subscriptionStatus === 'active_paid') return language === 'am' ? 'የተመዘገበ አባል (30 ቀናት)' : 'Active Subscriber (30-Day)';
     if (currentUser.subscriptionStatus === 'pending_approval') return language === 'am' ? 'በማረጋገጥ ላይ ያለ ክፍያ' : 'Payment Pending Approval';
+    if (currentUser.subscriptionStatus === 'rejected') return language === 'am' ? 'ክፍያ አልተረጋገጠም (እንደገና ይጫኑ)' : 'Payment Issue (Upload Payment)';
     if (currentUser.subscriptionStatus === 'expired') return language === 'am' ? 'ያለቀበት (በ3,900 ብር ያድሱ)' : 'Expired (Renew 3,900 ETB)';
     return language === 'am' ? 'ነፃ ሙከራ (ምዕራፍ 1 እና 2)' : 'Free Trial (Ch 1 & 2)';
   };
@@ -105,6 +108,37 @@ export const LearningDashboard: React.FC = () => {
 
   return (
     <div className="academy-enter space-y-6 pb-8">
+      {/* Payment Rejected Notification Banner */}
+      {!isAdmin && currentUser.subscriptionStatus === 'rejected' && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-500 text-rose-950 dark:text-rose-100 shadow-sm animate-fade-in">
+          <div className="flex items-start sm:items-center gap-3 min-w-0">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-600 text-white shrink-0 shadow-xs">
+              <AlertCircle className="h-5 w-5" />
+            </span>
+            <div className="text-xs sm:text-sm min-w-0">
+              <span className="font-extrabold text-rose-900 dark:text-rose-100 flex items-center gap-2">
+                <span>{language === 'am' ? '⚠️ የክፍያ ማረጋገጫ ችግር ተፈጥሯል' : '⚠️ Subscription Request Rejected: Payment Issue'}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-600 text-white">
+                  Action Needed
+                </span>
+              </span>
+              <p className="text-rose-950 dark:text-rose-200 text-xs mt-0.5 leading-relaxed font-medium">
+                {currentUser.paymentRejectedReason || (language === 'am'
+                  ? 'አስተዳዳሪ @EximmanAbdIstad የክፍያ ስክሪንሾትዎን ማረጋገጥ አልቻሉም። እባክዎ ትክክለኛውን የቴሌብር ክፍያ ስክሪንሾት በመጫን እንደገና ማጽደቂያ ይጠይቁ።'
+                  : 'Administrator @EximmanAbdIstad was unable to verify your telebirr transfer. Please upload the correct payment screenshot and try again for approval.')}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowPaywallModal(true)}
+            className="shrink-0 self-start sm:self-auto px-4 py-2.5 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs sm:text-sm font-bold transition shadow-xs flex items-center gap-2"
+          >
+            <UploadCloud className="h-4 w-4" />
+            <span>{language === 'am' ? 'ትክክለኛውን ክፍያ ይጫኑ' : 'Upload Payment & Retry'}</span>
+          </button>
+        </div>
+      )}
+
       {/* 3-Day Free Trial Stay Push Notification: Urge student to proceed to subscribe and use cost calculators */}
       {show3DayPush && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500/25 via-amber-500/15 to-transparent dark:bg-amber-950/60 border-2 border-amber-600 text-amber-950 dark:text-amber-100 shadow-sm animate-fade-in">
