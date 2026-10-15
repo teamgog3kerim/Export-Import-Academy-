@@ -26,7 +26,9 @@ import {
   Plus,
   LogOut,
   Languages,
-  Lock
+  Lock,
+  Bell,
+  Clock
 } from 'lucide-react';
 
 type NavItem = {
@@ -84,6 +86,8 @@ export const Navbar: React.FC = () => {
     t,
     currentUser,
     users,
+    adminNotifications,
+    adminApproveUser,
     loginWithTelegram,
     logout,
     isAdmin,
@@ -95,6 +99,11 @@ export const Navbar: React.FC = () => {
   } = useApp();
 
   const PAID_TOOL_TABS: NavItem['id'][] = ['landed_cost', 'lc_calculator', 'tax_calculator', 'incoterms_guide'];
+
+  const pendingRequests = users.filter(
+    u => u.role !== 'admin' && u.subscriptionStatus === 'pending_approval'
+  );
+  const pendingApprovalsCount = pendingRequests.length;
 
   const getNavLabel = (id: string, defaultLabel: string) => {
     if (language !== 'am') return defaultLabel;
@@ -125,18 +134,24 @@ export const Navbar: React.FC = () => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [adminNotifsOpen, setAdminNotifsOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const adminNotifsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!userDropdownOpen) return;
+    if (!userDropdownOpen && !adminNotifsOpen) return;
     const closeOnOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
+      }
+      if (adminNotifsRef.current && !adminNotifsRef.current.contains(event.target as Node)) {
+        setAdminNotifsOpen(false);
       }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setUserDropdownOpen(false);
+        setAdminNotifsOpen(false);
       }
     };
     document.addEventListener('mousedown', closeOnOutside);
@@ -145,7 +160,7 @@ export const Navbar: React.FC = () => {
       document.removeEventListener('mousedown', closeOnOutside);
       document.removeEventListener('keydown', closeOnEscape);
     };
-  }, [userDropdownOpen]);
+  }, [userDropdownOpen, adminNotifsOpen]);
 
   const navigate = (tab: NavItem['id']) => {
     if (PAID_TOOL_TABS.includes(tab) && !hasFullAccess) {
@@ -186,10 +201,15 @@ export const Navbar: React.FC = () => {
           }`}
         />
         <span>{itemLabel}</span>
+        {item.id === 'admin' && pendingApprovalsCount > 0 && (
+          <span className="ml-auto inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full text-[10px] font-extrabold bg-rose-600 text-white animate-pulse shadow-xs">
+            {pendingApprovalsCount}
+          </span>
+        )}
         {showLock && (
           <Lock className="ml-auto h-3 w-3 text-amber-600/80 dark:text-amber-400/80 shrink-0" />
         )}
-        {active && mobile && !showLock && (
+        {active && mobile && !showLock && item.id !== 'admin' && (
           <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-[#176b60] dark:text-[#8bc9b8]">
             {language === 'am' ? 'ገባሪ' : 'Active'}
           </span>
@@ -347,6 +367,113 @@ export const Navbar: React.FC = () => {
                 <span>English</span>
               </button>
             </div>
+
+            {/* Instant Admin Notification Bell for Administrator */}
+            {isAdmin && (
+              <div className="relative" ref={adminNotifsRef}>
+                <button
+                  type="button"
+                  onClick={() => setAdminNotifsOpen(v => !v)}
+                  aria-expanded={adminNotifsOpen}
+                  aria-haspopup="menu"
+                  aria-label="Admin Notifications"
+                  className="relative flex h-8 w-8 xs:h-9 xs:w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-850 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shadow-2xs"
+                  title={
+                    pendingApprovalsCount > 0
+                      ? `🚨 ${pendingApprovalsCount} Instant Subscription Request(s) Awaiting Approval!`
+                      : 'Admin Notifications'
+                  }
+                >
+                  <Bell className={`h-4 w-4 ${pendingApprovalsCount > 0 ? 'text-rose-600 animate-bounce' : 'text-neutral-500'}`} />
+                  {pendingApprovalsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-600 text-white text-[10px] font-extrabold shadow-xs animate-pulse">
+                      {pendingApprovalsCount}
+                    </span>
+                  )}
+                </button>
+
+                {adminNotifsOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full mt-2 w-[min(380px,calc(100vw-24px))] rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-2xl z-50 animate-scale-up"
+                  >
+                    <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-2.5 px-1">
+                      <div className="flex items-center gap-1.5">
+                        <Bell className="h-4 w-4 text-amber-600" />
+                        <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                          Subscription Requests ({pendingApprovalsCount})
+                        </h4>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigate('admin');
+                          setAdminNotifsOpen(false);
+                        }}
+                        className="text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:underline"
+                      >
+                        Open Dashboard →
+                      </button>
+                    </div>
+
+                    <div className="py-2 space-y-2 max-h-72 overflow-y-auto academy-scrollbar">
+                      {pendingRequests.length === 0 ? (
+                        <div className="text-center py-4 px-2 text-xs text-neutral-500 dark:text-neutral-400">
+                          <Check className="h-5 w-5 text-emerald-500 mx-auto mb-1 opacity-70" />
+                          <span>No pending subscription requests. All students are approved!</span>
+                        </div>
+                      ) : (
+                        pendingRequests.map(req => (
+                          <div
+                            key={req.id}
+                            className="p-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-xs space-y-1.5"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <span className="font-bold text-neutral-900 dark:text-neutral-100 block">
+                                  {req.fullName}
+                                </span>
+                                <span className="font-mono text-[11px] text-[#176b60] dark:text-[#8bc9b8]">
+                                  {req.telegramUsername}
+                                </span>
+                              </div>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-600 text-white shrink-0">
+                                3,900 ETB
+                              </span>
+                            </div>
+
+                            {req.telebirrTxId && (
+                              <p className="font-mono text-[10px] text-neutral-500 truncate">
+                                TxID: {req.telebirrTxId}
+                              </p>
+                            )}
+
+                            <div className="pt-1 flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => {
+                                  navigate('admin');
+                                  setAdminNotifsOpen(false);
+                                }}
+                                className="px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 text-[10px] font-medium"
+                              >
+                                View Details
+                              </button>
+                              <button
+                                onClick={() => {
+                                  adminApproveUser(req.id, 30);
+                                }}
+                                className="px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10px] shadow-2xs transition"
+                              >
+                                Approve 30 Days (Instant Access)
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* User Dropdown */}
             <div className="relative" ref={userMenuRef}>

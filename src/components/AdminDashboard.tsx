@@ -22,7 +22,10 @@ import {
   RefreshCw,
   Check,
   Radio,
-  Share2
+  Share2,
+  Trash2,
+  Bell,
+  AlertTriangle
 } from 'lucide-react';
 import {
   formatTelegramHandle,
@@ -45,14 +48,23 @@ export const AdminDashboard: React.FC = () => {
     adminExtendUser,
     adminGrantLifetime,
     adminResetToTrial,
+    adminDeleteUser,
+    adminNotifications,
+    markNotificationRead,
+    clearAllNotifications,
+    simulateTrialDays,
     currentUser,
-    loginWithTelegram
+    loginWithTelegram,
+    loginWithTelegramWidget,
+    submitSubscriptionPayment
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedProofUser, setSelectedProofUser] = useState<UserProfile | null>(null);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+  const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
 
   // New Student State
   const [newTelegram, setNewTelegram] = useState('');
@@ -130,12 +142,14 @@ export const AdminDashboard: React.FC = () => {
   const pendingUsers = nonAdminUsers.filter(u => u.subscriptionStatus === 'pending_approval');
   const activePaidUsers = nonAdminUsers.filter(u => u.subscriptionStatus === 'active_paid');
   const expiredUsers = nonAdminUsers.filter(u => u.subscriptionStatus === 'expired');
+  const widgetUsers = nonAdminUsers.filter(u => u.isTelegramWidgetUser);
   const totalRevenueETB = (activePaidUsers.length + expiredUsers.length) * 3900;
 
   // Filtered users
   const filteredUsers = nonAdminUsers
     .filter(u => {
       if (statusFilter === 'all') return true;
+      if (statusFilter === 'telegram_widget') return Boolean(u.isTelegramWidgetUser);
       return u.subscriptionStatus === statusFilter;
     })
     .filter(u => {
@@ -183,8 +197,29 @@ export const AdminDashboard: React.FC = () => {
     setNewPhone('');
   };
 
+  const handleConfirmDelete = () => {
+    if (!userToDelete) return;
+    const res = adminDeleteUser(userToDelete.id);
+    setDeleteNotice(res.message);
+    setUserToDelete(null);
+    setTimeout(() => setDeleteNotice(null), 4000);
+  };
+
   return (
     <div className="space-y-8">
+      {/* Delete Feedback Toast */}
+      {deleteNotice && (
+        <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300 font-semibold flex items-center justify-between shadow-xs animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{deleteNotice}</span>
+          </div>
+          <button onClick={() => setDeleteNotice(null)} className="text-emerald-600 hover:text-emerald-800">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-800 pb-5">
         <div>
@@ -198,7 +233,7 @@ export const AdminDashboard: React.FC = () => {
             Subscription Approvals & Student Management
           </h1>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-            Review telebirr payments (3,900 ETB to 09 6768 4490 · Abdulkerim) and grant 30-day full academy access.
+            Auto-records Telegram logins & reviews telebirr payments (3,900 ETB to 09 6768 4490 · Abdulkerim) for instant 30-day access.
           </p>
         </div>
 
@@ -213,50 +248,227 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Instant Pending Approvals Queue Card - High visibility when requests exist */}
+      {pendingUsers.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border-2 border-amber-500 rounded-3xl p-5 sm:p-6 shadow-md animate-pulse-subtle space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-600 text-white shadow-xs shrink-0 animate-bounce">
+                <Bell className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="font-serif-title font-bold text-lg sm:text-xl text-neutral-900 dark:text-neutral-50 flex items-center gap-2">
+                  <span>Instant Subscription Requests ({pendingUsers.length} Awaiting Approval)</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-600 text-white">
+                    Action Required
+                  </span>
+                </h2>
+                <p className="text-xs text-neutral-600 dark:text-neutral-300">
+                  Students submitted 3,900 ETB via telebirr (or bank) to 09 6768 4490. Approve below to activate full 30-day course & calculator access instantly!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {pendingUsers.map(user => (
+              <div
+                key={user.id}
+                className="bg-white dark:bg-neutral-900 border border-amber-300 dark:border-amber-800 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                      <span>{user.fullName}</span>
+                      {user.isTelegramWidgetUser && (
+                        <span className="text-[10px] text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 px-1.5 py-0.5 rounded border border-sky-200 dark:border-sky-800 font-normal">
+                          Telegram Widget
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 block mt-0.5">
+                      {user.telegramUsername}
+                    </span>
+                    <span className="text-[11px] text-neutral-500 font-mono block">
+                      Phone: {user.phoneNumber || 'Not provided'}
+                    </span>
+                    {user.telebirrTxId && (
+                      <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 block mt-0.5 font-bold">
+                        Tx Ref: {user.telebirrTxId}
+                      </span>
+                    )}
+                  </div>
+
+                  {user.paymentScreenshot && (
+                    <button
+                      onClick={() => setSelectedProofUser(user)}
+                      className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 text-[11px] font-semibold hover:bg-amber-100 transition"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Proof</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                  <button
+                    onClick={() => adminApproveUser(user.id, 30)}
+                    className="flex-1 py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs transition shadow-2xs flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Approve 30 Days (3,900 ETB)</span>
+                  </button>
+                  <button
+                    onClick={() => adminGrantLifetime(user.id)}
+                    className="py-2 px-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl font-bold text-xs transition"
+                    title="Grant Lifetime VIP"
+                  >
+                    VIP
+                  </button>
+                  <button
+                    onClick={() => adminRejectUser(user.id)}
+                    className="py-2 px-2.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-600 rounded-xl font-semibold text-xs transition"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    onClick={() => setUserToDelete(user)}
+                    className="p-2 rounded-xl text-neutral-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                    title={`Delete ${user.fullName} (${user.telegramUsername}) from records`}
+                    aria-label={`Delete ${user.fullName}`}
+                  >
+                    <Trash2 className="w-4 h-4 text-rose-500" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 shadow-xs">
           <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-            Total Enrolled Students
+            Total Students
           </span>
-          <div className="text-2xl md:text-3xl font-bold font-mono text-neutral-900 dark:text-neutral-100 mt-1">
+          <div className="text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 mt-1">
             {totalUsers}
           </div>
-          <span className="text-[11px] text-neutral-400 mt-1 block">Active & Trial Students</span>
+          <span className="text-[10px] text-neutral-400 mt-0.5 block">Trial & Subscribers</span>
         </div>
 
-        <div className="bg-white dark:bg-neutral-900 border border-amber-300 dark:border-amber-800 rounded-2xl p-5 shadow-xs bg-amber-50/20">
+        <div className="bg-white dark:bg-neutral-900 border border-sky-300 dark:border-sky-800 rounded-2xl p-4 shadow-xs bg-sky-50/20">
+          <span className="text-xs font-bold text-sky-800 dark:text-sky-300 flex items-center gap-1">
+            <Send className="w-3.5 h-3.5 text-[#229ed9]" />
+            <span>Telegram Widget</span>
+          </span>
+          <div className="text-2xl font-bold font-mono text-sky-700 dark:text-sky-300 mt-1">
+            {widgetUsers.length}
+          </div>
+          <span className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5 block">Auto-recorded from widget</span>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 border border-amber-300 dark:border-amber-800 rounded-2xl p-4 shadow-xs bg-amber-50/20">
           <span className="text-xs font-bold text-amber-800 dark:text-amber-400 flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />
-            <span>Pending Approvals</span>
+            <span>Pending Review</span>
           </span>
-          <div className="text-2xl md:text-3xl font-bold font-mono text-amber-700 dark:text-amber-400 mt-1">
+          <div className="text-2xl font-bold font-mono text-amber-700 dark:text-amber-400 mt-1">
             {pendingUsers.length}
           </div>
-          <span className="text-[11px] text-amber-700 dark:text-amber-400 mt-1 block">
-            {pendingUsers.length > 0 ? 'Requires your approval' : 'All requests up to date'}
+          <span className="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 block">
+            {pendingUsers.length > 0 ? 'Requires approval' : 'All approved'}
           </span>
         </div>
 
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-xs">
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 shadow-xs">
           <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-            Active Paid Subscribers
+            Active Paid
           </span>
-          <div className="text-2xl md:text-3xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+          <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
             {activePaidUsers.length}
           </div>
-          <span className="text-[11px] text-neutral-400 mt-1 block">All 16 Chapters Unlocked</span>
+          <span className="text-[10px] text-neutral-400 mt-0.5 block">Full 16 Ch & Tools</span>
         </div>
 
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-xs">
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 shadow-xs col-span-2 sm:col-span-1">
           <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
             Telebirr Revenue
           </span>
-          <div className="text-2xl md:text-3xl font-bold font-mono text-neutral-900 dark:text-neutral-100 mt-1">
+          <div className="text-xl sm:text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 mt-1 truncate">
             {formatETB(totalRevenueETB)}{' '}
-            <span className="text-sm font-sans font-normal text-neutral-500">ETB</span>
+            <span className="text-xs font-sans font-normal text-neutral-500">ETB</span>
           </div>
-          <span className="text-[11px] text-neutral-400 mt-1 block">@ 3,900 ETB / student</span>
+          <span className="text-[10px] text-neutral-400 mt-0.5 block">@ 3,900 ETB / student</span>
+        </div>
+      </div>
+
+      {/* Admin Live Verification & Simulation Suite */}
+      <div className="bg-gradient-to-r from-amber-500/10 via-sky-500/10 to-amber-500/10 dark:from-amber-950/40 dark:via-sky-950/30 dark:to-amber-950/40 border border-amber-300 dark:border-amber-800/80 rounded-2xl p-4 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 dark:text-neutral-100">
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>Admin Live Verification & Simulation Suite</span>
+            </div>
+            <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-0.5">
+              Instantly test Telegram login widget recording, subscription request notifications, and 3-day trial push reminders:
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const randomId = Math.floor(10000000 + Math.random() * 90000000);
+                const testUser = {
+                  id: randomId,
+                  first_name: 'Dawit',
+                  last_name: 'Haile',
+                  username: `Dawit_Exim_${randomId.toString().slice(-4)}`,
+                  auth_date: Math.floor(Date.now() / 1000),
+                  hash: 'verified_simulated_hash'
+                };
+                loginWithTelegramWidget(testUser);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
+              title="Simulates a student logging in with the Telegram login widget"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Simulate Widget Login</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const randomId = Math.floor(10000000 + Math.random() * 90000000);
+                submitSubscriptionPayment({
+                  fullName: 'Bethlehem Tadesse',
+                  telegramUsername: `@Betty_Export_${randomId.toString().slice(-4)}`,
+                  phoneNumber: '09 11 45 78 90',
+                  telebirrTxId: `TB${Date.now().toString().slice(-8)}`,
+                  paymentScreenshot: 'simulated_payment_proof'
+                });
+              }}
+              className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
+              title="Simulates an instant 3,900 ETB subscription request submitted for admin approval"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>Simulate 3,900 ETB Request</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                simulateTrialDays(3);
+                setDeleteNotice('Simulated current user as 3+ days on trial! 3-day push notification for courses & cost calculators is now active.');
+                setTimeout(() => setDeleteNotice(null), 5000);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-900 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
+              title="Sets current user trial start to 3 days ago to test the 3-day push notification"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Test 3-Day Push Notification</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -467,10 +679,11 @@ export const AdminDashboard: React.FC = () => {
         <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
           {[
             { id: 'all', label: `All (${nonAdminUsers.length})` },
-            { id: 'pending_approval', label: `Pending Review (${pendingUsers.length})` },
-            { id: 'active_paid', label: `Active (${activePaidUsers.length})` },
-            { id: 'expired', label: `Expired (${expiredUsers.length})` },
-            { id: 'free_trial', label: 'Free Trial' }
+            { id: 'pending_approval', label: `Pending Requests (${pendingUsers.length})` },
+            { id: 'telegram_widget', label: `Telegram Widget (${widgetUsers.length})` },
+            { id: 'active_paid', label: `Active Paid (${activePaidUsers.length})` },
+            { id: 'free_trial', label: 'Free Trial' },
+            { id: 'expired', label: `Expired (${expiredUsers.length})` }
           ].map(f => (
             <button
               key={f.id}
@@ -519,6 +732,8 @@ export const AdminDashboard: React.FC = () => {
                 filteredUsers.map(user => {
                   const daysLeft = getDaysLeft(user.expiresAt);
                   const isCurrent = currentUser.id === user.id;
+                  const trialStart = user.trialStartedAt || user.registeredAt;
+                  const daysOnTrial = Math.max(0, Math.floor((Date.now() - new Date(trialStart).getTime()) / (1000 * 60 * 60 * 24)));
 
                   return (
                     <tr
@@ -531,8 +746,13 @@ export const AdminDashboard: React.FC = () => {
                     >
                       {/* Name & Telegram */}
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                        <div className="font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 flex-wrap">
                           <span>{user.fullName}</span>
+                          {user.isTelegramWidgetUser && (
+                            <span className="text-[10px] font-semibold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 px-1.5 py-0.5 rounded border border-sky-200 dark:border-sky-800">
+                              Auto Widget
+                            </span>
+                          )}
                           {user.completedChapters && user.completedChapters.length > 0 && (
                             <span className="text-[10px] font-normal text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                               {user.completedChapters.length}/16 ch
@@ -568,6 +788,11 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="text-neutral-400 text-[10px] mt-0.5 space-y-0.5">
                           <div>Reg: {new Date(user.registeredAt).toLocaleDateString()}</div>
+                          {user.subscriptionStatus === 'free_trial' && (
+                            <div className={`font-semibold ${daysOnTrial >= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-neutral-500'}`}>
+                              Trial: Day {daysOnTrial + 1} {daysOnTrial >= 3 ? '(3D Push Active)' : ''}
+                            </div>
+                          )}
                           {user.lastLoginAt && (
                             <div className="text-neutral-500">Active: {new Date(user.lastLoginAt).toLocaleDateString()}</div>
                           )}
@@ -767,6 +992,16 @@ export const AdminDashboard: React.FC = () => {
                               </button>
                             </>
                           )}
+
+                          {/* Delete User Button */}
+                          <button
+                            onClick={() => setUserToDelete(user)}
+                            className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors ml-1"
+                            title={`Delete ${user.fullName} (${user.telegramUsername}) from records`}
+                            aria-label={`Delete ${user.fullName}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-500 hover:text-rose-600" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -940,6 +1175,59 @@ export const AdminDashboard: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scale-up">
+            <div className="flex items-center gap-3 text-rose-600">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </span>
+              <div>
+                <h3 className="font-serif-title font-bold text-lg text-neutral-900 dark:text-neutral-100">
+                  Delete Student Record?
+                </h3>
+                <span className="text-xs text-neutral-500">
+                  Confirm permanent removal from database
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 text-xs space-y-1.5">
+              <div><strong>Student:</strong> {userToDelete.fullName}</div>
+              <div><strong>Telegram:</strong> <span className="font-mono text-amber-700 dark:text-amber-400 font-bold">{userToDelete.telegramUsername}</span></div>
+              <div><strong>Subscription:</strong> <span className="capitalize">{userToDelete.subscriptionStatus.replace('_', ' ')}</span></div>
+              {userToDelete.phoneNumber && <div><strong>Mobile:</strong> {userToDelete.phoneNumber}</div>}
+              {userToDelete.isTelegramWidgetUser && (
+                <div className="text-[11px] text-sky-600 dark:text-sky-400 font-semibold">Registered via Telegram Login Widget</div>
+              )}
+            </div>
+
+            <p className="text-xs text-rose-700 dark:text-rose-400 leading-relaxed">
+              ⚠️ This will permanently delete this student, their 30-day subscription, chapter completions, and payment records. This action cannot be reversed.
+            </p>
+
+            <div className="pt-2 flex items-center justify-end gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => setUserToDelete(null)}
+                className="px-4 py-2.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-colors shadow-xs flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Yes, Delete User</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

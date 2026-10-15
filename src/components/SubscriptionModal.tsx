@@ -171,6 +171,12 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
     }
   };
 
+  const trialStart = currentUser.trialStartedAt || currentUser.registeredAt;
+  const daysSinceTrialStart = trialStart
+    ? Math.max(0, Math.floor((Date.now() - new Date(trialStart).getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const is3DayTrialUser = currentUser.subscriptionStatus === 'free_trial' && daysSinceTrialStart >= 3;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 xs:p-3 sm:p-4 md:p-6 overflow-y-auto">
       <div
@@ -213,6 +219,23 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
         {/* Scrollable Content Body - Fully visible and cleanly scrollable on all screens */}
         <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-5 sm:space-y-6 academy-scrollbar overscroll-contain">
+
+        {/* 3-Day Free Trial Milestone Push Banner */}
+        {is3DayTrialUser && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-amber-500/15 to-transparent dark:bg-amber-950/50 border-2 border-amber-500 text-xs text-amber-950 dark:text-amber-100 flex items-start gap-3 shadow-xs animate-fade-in">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-600 text-white shrink-0 mt-0.5">
+              <Clock className="w-4 h-4" />
+            </span>
+            <div>
+              <strong className="text-sm font-bold block text-amber-900 dark:text-amber-100">
+                ⏰ 3-Day Free Trial Milestone Reached!
+              </strong>
+              <p className="text-[11px] mt-1 text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+                You've stayed on trial for 3+ days! Submit your 3,900 ETB telebirr payment below to get instant approval from @EximmanAbdIstad and unlock all 16 chapters and financial calculators (Landed Cost Build-up, Letter of Credit, and Customs Tax Assessment).
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Full Subscription Plan Card */}
         <div className="relative bg-gradient-to-b from-amber-50/70 to-white dark:from-amber-950/30 dark:to-neutral-900 rounded-3xl border-2 border-amber-600/80 p-5 sm:p-6 space-y-4 shadow-md">

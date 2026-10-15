@@ -97,8 +97,45 @@ export const LearningDashboard: React.FC = () => {
     ? Math.max(0, Math.ceil((new Date(currentUser.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
+  const trialStart = currentUser.trialStartedAt || currentUser.registeredAt;
+  const daysSinceTrialStart = trialStart
+    ? Math.max(0, Math.floor((Date.now() - new Date(trialStart).getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const show3DayPush = !isAdmin && currentUser.subscriptionStatus === 'free_trial' && daysSinceTrialStart >= 3;
+
   return (
     <div className="academy-enter space-y-6 pb-8">
+      {/* 3-Day Free Trial Stay Push Notification: Urge student to proceed to subscribe and use cost calculators */}
+      {show3DayPush && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500/25 via-amber-500/15 to-transparent dark:bg-amber-950/60 border-2 border-amber-600 text-amber-950 dark:text-amber-100 shadow-sm animate-fade-in">
+          <div className="flex items-start sm:items-center gap-3 min-w-0">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-600 text-white shrink-0 shadow-xs">
+              <Clock className="h-5 w-5" />
+            </span>
+            <div className="text-xs sm:text-sm min-w-0">
+              <span className="font-extrabold text-amber-950 dark:text-amber-100 flex items-center gap-2">
+                <span>{language === 'am' ? '⏰ ነፃ ሙከራ ከጀመሩ 3 ቀናት አልፈዋል! ሙሉ ትምህርቱንና የዋጋ ማስያዎችን ይጠቀሙ' : '⏰ 3+ Days on Free Trial! Ready to advance with courses and use cost calculators?'}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-600 text-white">
+                  60% Off
+                </span>
+              </span>
+              <p className="text-amber-900/90 dark:text-amber-300/90 text-xs mt-0.5 leading-relaxed">
+                {language === 'am'
+                  ? 'የነፃ ሙከራ ምዕራፍ 1 እና 2ን አጠናቀዋል። አሁን በ3,900 ብር (ልዩ 60% ቅናሽ!) በመመዝገብ ሙሉ 16 ምዕራፎችንና የዕቃ ጠቅላላ ወጪ (Landed Cost)፣ የኤል ሲ ስሌት (L/C) እና የጉምሩክ ቀረጥ ማስያ መሳሪያዎችን ለ30 ቀናት በሙሉ ይጠቀሙ!'
+                  : "You've explored chapters 1 & 2 on free trial. Subscribe now for 3,900 ETB (Promotional 60% Discount!) to unlock chapters 3–16 and all financial calculators (Landed Cost Build-up, L/C, Customs Tax Assessment, and Incoterms Guide) for 30 days!"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowPaywallModal(true)}
+            className="shrink-0 self-start sm:self-auto px-4 py-2.5 bg-amber-700 hover:bg-amber-800 active:bg-amber-900 text-white rounded-xl text-xs sm:text-sm font-bold transition shadow-xs flex items-center gap-2"
+          >
+            <CreditCard className="h-4 w-4" />
+            <span>{language === 'am' ? 'ይመዝገቡና ማስያዎችን ይጠቀሙ (3,900 ብር)' : 'Subscribe for Courses & Calculators (3,900 ETB)'}</span>
+          </button>
+        </div>
+      )}
+
       {/* 4-Day Expiry Notification Banner */}
       {!isAdmin && currentUser.subscriptionStatus === 'active_paid' && daysLeft !== null && daysLeft <= 4 && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-amber-500/15 dark:bg-amber-950/50 border-2 border-amber-500 text-amber-950 dark:text-amber-100 shadow-sm animate-pulse-subtle">

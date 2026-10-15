@@ -3,7 +3,13 @@ import { useApp } from '../context/AppContext';
 import { Calculator, Printer, RotateCcw, FileDown, ShieldCheck, HelpCircle, Lock } from 'lucide-react';
 
 export const TaxAssessmentCalculator: React.FC = () => {
-  const { hasFullAccess, setShowPaywallModal } = useApp();
+  const { hasFullAccess, setShowPaywallModal, currentUser } = useApp();
+
+  const trialStart = currentUser.trialStartedAt || currentUser.registeredAt;
+  const daysSinceTrialStart = trialStart
+    ? Math.max(0, Math.floor((Date.now() - new Date(trialStart).getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const is3DayTrialUser = currentUser.subscriptionStatus === 'free_trial' && daysSinceTrialStart >= 3;
 
   const [itemDescription, setItemDescription] = useState<string>('Toyota Spare Parts — 1 Container');
   const [units, setUnits] = useState<number>(1);
@@ -130,17 +136,28 @@ export const TaxAssessmentCalculator: React.FC = () => {
 
       {/* Subscription Paywall Overlay if not full access */}
       {!hasFullAccess && (
-        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+        <div className={`border rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs ${
+          is3DayTrialUser
+            ? 'bg-gradient-to-r from-amber-500/25 via-amber-500/15 to-transparent dark:bg-amber-950/60 border-2 border-amber-600 animate-pulse-subtle'
+            : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/80'
+        }`}>
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-amber-700 text-white flex items-center justify-center shrink-0">
               <Lock className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-amber-900 dark:text-amber-100 uppercase tracking-wider">
-                Full Academy Subscription Required
+              <h3 className="text-xs font-bold text-amber-900 dark:text-amber-100 uppercase tracking-wider flex items-center gap-2">
+                <span>{is3DayTrialUser ? '⏰ 3-Day Trial Milestone: Unlock Customs Tax Engine' : 'Full Academy Subscription Required'}</span>
+                {is3DayTrialUser && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-600 text-white">
+                    60% Off
+                  </span>
+                )}
               </h3>
               <p className="text-xs text-amber-800/90 dark:text-amber-300/90 mt-0.5">
-                The Customs 7-Tier Tax Assessment Engine is available for full subscribers. Subscribe for 3,900 ETB (Promotional 60% Discount!) to calculate complete cascading customs duty, excise, surtax, social welfare, VAT, and withholding.
+                {is3DayTrialUser
+                  ? "You've been on free trial for 3+ days! Master Ethiopia's 7-tier cascading customs duty, excise, surtax, social welfare, VAT, and withholding. Subscribe now for 3,900 ETB (Promotional 60% Discount!) for full 30-day access."
+                  : 'The Customs 7-Tier Tax Assessment Engine is available for full subscribers. Subscribe for 3,900 ETB (Promotional 60% Discount!) to calculate complete cascading customs duty, excise, surtax, social welfare, VAT, and withholding.'}
               </p>
             </div>
           </div>
@@ -150,7 +167,7 @@ export const TaxAssessmentCalculator: React.FC = () => {
             className="px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shrink-0 transition-colors shadow-xs flex items-center gap-1.5"
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>Subscribe to Unlock (3,900 ETB)</span>
+            <span>{is3DayTrialUser ? 'Subscribe & Use Calculator (3,900 ETB)' : 'Subscribe to Unlock (3,900 ETB)'}</span>
           </button>
         </div>
       )}

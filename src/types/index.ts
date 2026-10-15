@@ -10,6 +10,8 @@ export interface UserProfile {
   subscriptionStatus: SubscriptionStatus;
   registeredAt: string;
   lastLoginAt?: string;
+  trialStartedAt?: string; // ISO date when free trial started
+  isTelegramWidgetUser?: boolean; // Logged in via Telegram Login Widget
   expiresAt: string | null; // ISO Date string for 30 days expiry
   telebirrTxId?: string;
   paymentScreenshot?: string;
@@ -19,6 +21,21 @@ export interface UserProfile {
   completedChapters?: string[]; // IDs of completed chapters
   certificateIssuedAt?: string;
   certificateId?: string;
+}
+
+export interface AdminNotification {
+  id: string;
+  type: 'subscription_request' | 'trial_login' | 'approved';
+  userId: string;
+  telegramUsername: string;
+  fullName: string;
+  amount: number;
+  timestamp: string;
+  read: boolean;
+  telebirrTxId?: string;
+  hasScreenshot?: boolean;
+  message: string;
+  isTelegramWidgetUser?: boolean;
 }
 
 export interface ResourceDocument {

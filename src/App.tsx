@@ -20,16 +20,18 @@ import { RecordsTracker } from './components/RecordsTracker';
 import { CertificationView } from './components/CertificationView';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { TelegramAuthModal } from './components/TelegramAuthModal';
-import { AlertTriangle, Send, Clock, CreditCard } from 'lucide-react';
+import { AlertTriangle, Send, Clock, CreditCard, Bell, Sparkles, CheckCircle2, X } from 'lucide-react';
 
 const toolTabs = ['landed_cost', 'lc_calculator', 'tax_calculator', 'incoterms_guide'];
 
 const MainContent: React.FC = () => {
   const {
-    activeNavTab, selectedChapterId, isAdmin, showPaywallModal, setShowPaywallModal,
-    showTelegramAuthModal, setShowTelegramAuthModal, isTelegramApp, currentUser, language
+    activeNavTab, setActiveNavTab, selectedChapterId, isAdmin, showPaywallModal, setShowPaywallModal,
+    showTelegramAuthModal, setShowTelegramAuthModal, isTelegramApp, currentUser, language, users, adminApproveUser
   } = useApp();
   const [storageWarning, setStorageWarning] = useState(false);
+  const [dismissed3DayPush, setDismissed3DayPush] = useState(false);
+  const [showApprovalNotice, setShowApprovalNotice] = useState(false);
 
   // Ensure pages and chapters always start from the top when navigating
   useEffect(() => {
@@ -44,9 +46,37 @@ const MainContent: React.FC = () => {
     return () => window.removeEventListener('academy-storage-error', warn);
   }, []);
 
+  // Listen for instant subscription approval
+  useEffect(() => {
+    const handleApproved = (e: Event) => {
+      const customEv = e as CustomEvent<{ userId: string }>;
+      if (customEv.detail?.userId === currentUser.id) {
+        setShowApprovalNotice(true);
+      }
+    };
+    window.addEventListener('academy-user-approved', handleApproved as EventListener);
+    return () => window.removeEventListener('academy-user-approved', handleApproved as EventListener);
+  }, [currentUser.id]);
+
   const daysLeft = currentUser.expiresAt && currentUser.subscriptionStatus === 'active_paid'
     ? Math.max(0, Math.ceil((new Date(currentUser.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
+
+  // 3-Day Trial Stay Calculation
+  const trialStart = currentUser.trialStartedAt || currentUser.registeredAt;
+  const daysSinceTrialStart = trialStart
+    ? Math.max(0, Math.floor((Date.now() - new Date(trialStart).getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const show3DayPush =
+    !isAdmin &&
+    currentUser.subscriptionStatus === 'free_trial' &&
+    daysSinceTrialStart >= 3 &&
+    !dismissed3DayPush;
+
+  // Admin pending subscription requests
+  const pendingRequests = users.filter(
+    u => u.role !== 'admin' && u.subscriptionStatus === 'pending_approval'
+  );
 
   const isTool = toolTabs.includes(activeNavTab);
   const showAdmin = activeNavTab === 'admin' && isAdmin;
@@ -54,6 +84,108 @@ const MainContent: React.FC = () => {
   return (
     <div className="academy-shell flex min-h-[100dvh] flex-col transition-colors">
       <Navbar />
+
+      {/* Instant Admin Notification Bar: Alert admin immediately of every subscription request */}
+      {isAdmin && pendingRequests.length > 0 && (
+        <div role="alert" className="border-b-2 border-rose-500 bg-gradient-to-r from-amber-600 via-rose-600 to-amber-700 text-white px-3 sm:px-4 py-2.5 sm:py-2 text-xs leading-5 shadow-md animate-pulse-subtle">
+          <div className="mx-auto max-w-[1440px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 w-full">
+            <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-white shrink-0 mt-0.5 sm:mt-0 animate-bounce">
+                <Bell className="h-3.5 w-3.5" />
+              </span>
+              <span className="min-w-0">
+                <strong>🚨 Instant Admin Alert ({pendingRequests.length} Pending Approval):</strong>{' '}
+                {pendingRequests.map(r => `${r.fullName} (${r.telegramUsername})`).slice(0, 2).join(', ')}
+                {pendingRequests.length > 2 ? ` +${pendingRequests.length - 2} more` : ''} submitted 3,900 ETB telebirr payment for 30-day access!
+              </span>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+              <button
+                onClick={() => setActiveNavTab('admin')}
+                className="px-3 py-1 bg-white text-neutral-900 rounded-lg font-bold text-xs hover:bg-neutral-100 transition shadow-2xs"
+              >
+                Review in Admin Dashboard
+              </button>
+              <button
+                onClick={() => adminApproveUser(pendingRequests[0].id, 30)}
+                className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-xs transition shadow-2xs"
+                title={`Instantly activate 30-day access for ${pendingRequests[0].telegramUsername}`}
+              >
+                Approve ({pendingRequests[0].telegramUsername})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Instant Access Approved Celebration Banner for Student */}
+      {showApprovalNotice && currentUser.subscriptionStatus === 'active_paid' && (
+        <div role="status" className="border-b-2 border-emerald-500 bg-emerald-600 text-white px-3 sm:px-4 py-2.5 text-xs font-semibold shadow-md animate-fade-in">
+          <div className="mx-auto max-w-[1440px] flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 shrink-0 text-amber-300 animate-spin-slow" />
+              <span>
+                <strong>🎉 {language === 'am' ? 'እንኳን ደስ አለዎት! ሙሉ አባልነትዎ ጸድቋል' : 'Congratulations! Subscription Approved!'}</strong>{' '}
+                {language === 'am'
+                  ? 'የ30 ቀናት ሙሉ አባልነትዎ በአስተዳዳሪ @EximmanAbdIstad ጸድቋል። ሙሉ 16 ምዕራፎችና የዋጋ ማስያ መሳሪያዎች አሁን ተከፍተዋል!'
+                  : 'Your 30-day full subscription has been approved by @EximmanAbdIstad. All 16 chapters & computational cost calculators are now fully unlocked!'}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowApprovalNotice(false)}
+              className="p-1 rounded hover:bg-emerald-700 transition"
+              aria-label="Close notice"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3-Day Trial Push Notification: Push trial students to proceed to subscribe and use cost calculators */}
+      {show3DayPush && (
+        <div role="alert" className="border-b-2 border-amber-600 bg-gradient-to-r from-amber-500/20 via-amber-500/15 to-transparent dark:bg-amber-950/80 px-3 sm:px-4 py-3 text-xs leading-5 text-amber-950 dark:text-amber-100 shadow-sm animate-fade-in">
+          <div className="mx-auto max-w-[1440px] flex flex-col md:flex-row items-start md:items-center justify-between gap-3 w-full">
+            <div className="flex items-start gap-2.5 min-w-0 flex-1">
+              <span className="flex h-6 w-6 items-center justify-center rounded-xl bg-amber-600 text-white shrink-0 mt-0.5 shadow-2xs">
+                <Clock className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-bold text-amber-900 dark:text-amber-200">
+                  {language === 'am'
+                    ? '⏰ ነፃ ሙከራ ከጀመሩ 3 ቀናት ሞልቷል! ሙሉ ትምህርቱንና የዋጋ ማስያ መሳሪያዎችን ለመጠቀም ይመዝገቡ'
+                    : '⏰ 3 Days on Free Trial! Ready to master Ethiopian export-import trade & cost calculators?'}
+                </p>
+                <p className="text-[11px] text-amber-800/90 dark:text-amber-300/90 mt-0.5">
+                  {language === 'am'
+                    ? 'የነፃ ሙከራ ምዕራፍ 1 እና 2ን ጎብኝተዋል። አሁን በ3,900 ብር (ልዩ 60% ቅናሽ!) በመመዝገብ ሙሉ 16 ምዕራፎችን፣ Landed Cost፣ Letter of Credit እና የጉምሩክ ቀረጥ ማስያ መሳሪያዎችን ለ30 ቀናት በሙሉ ይጠቀሙ!'
+                    : "You've explored chapters 1 & 2 on free trial. Subscribe now for 3,900 ETB (Promotional 60% Discount!) to unlock chapters 3–16 and all financial calculators (Landed Cost Build-up, L/C, Customs Tax Assessment, and Incoterms Guide) for 30 days!"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 w-full md:w-auto shrink-0 justify-end">
+              <button
+                onClick={() => setShowPaywallModal(true)}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs transition shadow-2xs"
+              >
+                <CreditCard className="h-3.5 w-3.5" />
+                <span>
+                  {language === 'am'
+                    ? 'አባልነትን ያጠናቁና መሳሪያዎችን ይጠቀሙ (3,900 ብር)'
+                    : 'Subscribe for Full Courses & Cost Calculators (3,900 ETB)'}
+                </span>
+              </button>
+              <button
+                onClick={() => setDismissed3DayPush(true)}
+                className="p-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-amber-500/10 rounded-xl transition"
+                title="Dismiss reminder"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 4-Day Expiry App-wide Notification Bar */}
       {!isAdmin && currentUser.subscriptionStatus === 'active_paid' && daysLeft !== null && daysLeft <= 4 && (

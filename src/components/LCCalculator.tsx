@@ -3,8 +3,14 @@ import { useApp } from '../context/AppContext';
 import { FileText, CheckCircle2, DollarSign, ArrowRight, Printer, RotateCcw, AlertTriangle, Layers, Lock, ShieldCheck } from 'lucide-react';
 
 export const LCCalculator: React.FC = () => {
-  const { hasFullAccess, setShowPaywallModal } = useApp();
+  const { hasFullAccess, setShowPaywallModal, currentUser } = useApp();
   const [activeCase, setActiveCase] = useState<'case1' | 'case2'>('case2');
+
+  const trialStart = currentUser.trialStartedAt || currentUser.registeredAt;
+  const daysSinceTrialStart = trialStart
+    ? Math.max(0, Math.floor((Date.now() - new Date(trialStart).getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const is3DayTrialUser = currentUser.subscriptionStatus === 'free_trial' && daysSinceTrialStart >= 3;
 
   // Case 1 State (Full Shipment - seeded with PDF Page 3 data)
   const [case1Units, setCase1Units] = useState<number>(10);
@@ -183,17 +189,28 @@ export const LCCalculator: React.FC = () => {
 
       {/* Subscription Paywall Overlay if not full access */}
       {!hasFullAccess && (
-        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+        <div className={`border rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs ${
+          is3DayTrialUser
+            ? 'bg-gradient-to-r from-amber-500/25 via-amber-500/15 to-transparent dark:bg-amber-950/60 border-2 border-amber-600 animate-pulse-subtle'
+            : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/80'
+        }`}>
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-amber-700 text-white flex items-center justify-center shrink-0">
               <Lock className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-amber-900 dark:text-amber-100 uppercase tracking-wider">
-                Full Academy Subscription Required
+              <h3 className="text-xs font-bold text-amber-900 dark:text-amber-100 uppercase tracking-wider flex items-center gap-2">
+                <span>{is3DayTrialUser ? '⏰ 3-Day Trial Milestone: Unlock L/C Settlement Engine' : 'Full Academy Subscription Required'}</span>
+                {is3DayTrialUser && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-600 text-white">
+                    60% Off
+                  </span>
+                )}
               </h3>
               <p className="text-xs text-amber-800/90 dark:text-amber-300/90 mt-0.5">
-                The Letter of Credit (L/C) Settlement Engine is available for full academy members. Subscribe for 3,900 ETB (Promotional 60% Discount!) to access full calculation models, partial lot splits, and printable settlement sheets.
+                {is3DayTrialUser
+                  ? "You've been on free trial for 3+ days! Master Letter of Credit settlements, swift fees, and bank margin releases. Subscribe now for 3,900 ETB (Promotional 60% Discount!) for full 30-day access."
+                  : 'The Letter of Credit (L/C) Settlement Engine is available for full academy members. Subscribe for 3,900 ETB (Promotional 60% Discount!) to access full calculation models, partial lot splits, and printable settlement sheets.'}
               </p>
             </div>
           </div>
@@ -203,7 +220,7 @@ export const LCCalculator: React.FC = () => {
             className="px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shrink-0 transition-colors shadow-xs flex items-center gap-1.5"
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>Subscribe to Unlock (3,900 ETB)</span>
+            <span>{is3DayTrialUser ? 'Subscribe & Use Calculator (3,900 ETB)' : 'Subscribe to Unlock (3,900 ETB)'}</span>
           </button>
         </div>
       )}

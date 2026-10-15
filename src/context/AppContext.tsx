@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, AdminNotification, SubscriptionStatus } from '../types';
 import { COURSE_MODULES } from '../data/courseData';
 import { Language, translate } from '../utils/translations';
 import {
@@ -45,6 +45,11 @@ interface AppContextType {
   adminExtendUser: (userId: string, days?: number) => void;
   adminGrantLifetime: (userId: string) => void;
   adminResetToTrial: (userId: string) => void;
+  adminDeleteUser: (userId: string) => { success: boolean; message: string };
+  adminNotifications: AdminNotification[];
+  markNotificationRead: (id: string) => void;
+  clearAllNotifications: () => void;
+  simulateTrialDays: (days: number) => void;
   switchUser: (userId: string) => void;
   loginAsAdmin: () => void;
   loginWithTelegram: (telegramUsername: string, fullName?: string, phoneNumber?: string) => void;
@@ -91,6 +96,7 @@ const STORAGE_KEY_THEME = 'ethio_impex_theme';
 const STORAGE_KEY_LANGUAGE = 'ethio_impex_lang_v1';
 const STORAGE_KEY_QUIZ_SCORES = 'ethio_impex_quiz_scores_v6';
 const STORAGE_KEY_USER_QUIZZES = 'ethio_impex_user_quizzes_v6';
+const STORAGE_KEY_ADMIN_NOTIFS = 'ethio_impex_admin_notifs_v6';
 
 type QuizScores = Record<string, { score: number; maxScore: number; date: string }>;
 const ALL_CHAPTERS = COURSE_MODULES.flatMap(module => module.chapters);
@@ -118,6 +124,28 @@ export const ADMIN_USER: UserProfile = {
   completedChapters: []
 };
 
+const playAdminChime = () => {
+  try {
+    const AudioContextClass =
+      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.45);
+  } catch {
+    // Ignore audio restrictions
+  }
+};
+
 export const GUEST_STUDENT_USER: UserProfile = {
   id: 'guest-student',
   fullName: 'New Student (Guest)',
@@ -127,6 +155,7 @@ export const GUEST_STUDENT_USER: UserProfile = {
   role: 'user',
   subscriptionStatus: 'free_trial',
   registeredAt: new Date().toISOString(),
+  trialStartedAt: new Date().toISOString(),
   expiresAt: null,
   paymentAmount: 0,
   completedChapters: []
@@ -249,6 +278,87 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return {};
   });
+
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_ADMIN_NOTIFS);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    saveLocal(STORAGE_KEY_ADMIN_NOTIFS, JSON.stringify(adminNotifications));
+  }, [adminNotifications]);
+
+  const markNotificationRead = (id: string) => {
+    setAdminNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  const clearAllNotifications = () => {
+    setAdminNotifications([]);
+  };
+
+  // Cross-tab and real-time event listener for instant subscription requests and approvals
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY_USERS && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setUsers(parsed);
+          }
+        } catch {}
+      }
+      if (e.key === STORAGE_KEY_ADMIN_NOTIFS && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setAdminNotifications(parsed);
+          }
+        } catch {}
+      }
+    };
+
+    const handleUserApproved = (e: Event) => {
+      const customEv = e as CustomEvent<{ userId: string; expiresAt: string }>;
+      if (customEv.detail?.userId) {
+        setUsers(prev =>
+          prev.map(u =>
+            u.id === customEv.detail.userId
+              ? {
+                  ...u,
+                  subscriptionStatus: 'active_paid' as const,
+                  expiresAt: customEv.detail.expiresAt,
+                  notes: 'Approved by @EximmanAbdIstad'
+                }
+              : u
+          )
+        );
+      }
+    };
+
+    const handleSubRequest = () => {
+      playAdminChime();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('academy-user-approved', handleUserApproved as EventListener);
+    window.addEventListener('academy-subscription-request', handleSubRequest as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('academy-user-approved', handleUserApproved as EventListener);
+      window.removeEventListener('academy-subscription-request', handleSubRequest as EventListener);
+    };
+  }, []);
 
   // Telegram Mini App Lifecycle Hook
   useEffect(() => {
@@ -452,6 +562,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }) => {
     const formattedTelegram = formatTelegramHandle(data.telegramUsername);
     const now = new Date().toISOString();
+    let assignedUserId = '';
 
     setUsers(prev => {
       const existingIdx = prev.findIndex(
@@ -461,20 +572,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (existingIdx >= 0) {
         const copy = [...prev];
         const target = copy[existingIdx];
+        assignedUserId = target.id;
+        const wasWidgetUser = Boolean(target.isTelegramWidgetUser || currentUser.isTelegramWidgetUser);
         copy[existingIdx] = {
           ...target,
           fullName: data.fullName.trim() || target.fullName,
           telegramUsername: formattedTelegram,
           phoneNumber: data.phoneNumber.trim() || target.phoneNumber,
           subscriptionStatus: 'pending_approval',
+          isTelegramWidgetUser: wasWidgetUser,
           telebirrTxId: data.telebirrTxId?.trim() || target.telebirrTxId,
           paymentScreenshot: data.paymentScreenshot,
           paymentAmount: 3900,
           notes: `Telebirr 3,900 ETB payment submitted for @EximmanAbdIstad approval`
         };
         setCurrentUserId(target.id);
+        saveLocal(STORAGE_KEY_USERS, JSON.stringify(copy));
         return copy;
       } else {
+        const isFromWidget = Boolean(currentUser.isTelegramWidgetUser);
         const newUser: UserProfile = {
           id: `user-${Date.now()}`,
           fullName: data.fullName.trim() || formattedTelegram,
@@ -482,7 +598,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           phoneNumber: data.phoneNumber.trim(),
           role: 'user',
           subscriptionStatus: 'pending_approval',
+          isTelegramWidgetUser: isFromWidget,
           registeredAt: now,
+          trialStartedAt: now,
           expiresAt: null,
           telebirrTxId: data.telebirrTxId?.trim(),
           paymentScreenshot: data.paymentScreenshot,
@@ -490,10 +608,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           notes: `Telebirr 3,900 ETB payment submitted for @EximmanAbdIstad approval`,
           completedChapters: []
         };
+        assignedUserId = newUser.id;
         setCurrentUserId(newUser.id);
-        return [...prev, newUser];
+        const updated = [...prev, newUser];
+        saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+        return updated;
       }
     });
+
+    const isWidgetStudent = Boolean(currentUser.isTelegramWidgetUser);
+
+    // Notify the admin INSTANTLY for every user's subscription request
+    const notif: AdminNotification = {
+      id: `notif-sub-${Date.now()}`,
+      type: 'subscription_request',
+      userId: assignedUserId,
+      telegramUsername: formattedTelegram,
+      fullName: data.fullName.trim() || formattedTelegram,
+      amount: 3900,
+      timestamp: now,
+      read: false,
+      isTelegramWidgetUser: isWidgetStudent,
+      telebirrTxId: data.telebirrTxId?.trim(),
+      hasScreenshot: Boolean(data.paymentScreenshot),
+      message: `🚨 ${isWidgetStudent ? '[Telegram Widget] ' : ''}New Subscription Request: ${formattedTelegram} (${data.fullName.trim() || formattedTelegram}) submitted 3,900 ETB for 30-day approval!`
+    };
+
+    setAdminNotifications(prev => [notif, ...prev]);
+    playAdminChime();
+
+    // Broadcast instant subscription request notification event
+    window.dispatchEvent(
+      new CustomEvent('academy-subscription-request', {
+        detail: {
+          userId: assignedUserId,
+          telegramUsername: formattedTelegram,
+          fullName: data.fullName.trim() || formattedTelegram,
+          amount: 3900,
+          isTelegramWidgetUser: isWidgetStudent
+        }
+      })
+    );
   };
 
   const loginWithTelegram = (telegramUsername: string, fullName?: string, phoneNumber?: string) => {
@@ -528,6 +683,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           lastLoginAt: now
         };
         setCurrentUserId(existing.id);
+        saveLocal(STORAGE_KEY_USERS, JSON.stringify(copy));
         return copy;
       }
 
@@ -539,13 +695,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         role: 'user',
         subscriptionStatus: 'free_trial',
         registeredAt: now,
+        trialStartedAt: now,
         lastLoginAt: now,
         expiresAt: null,
         paymentAmount: 0,
         completedChapters: []
       };
       setCurrentUserId(newUser.id);
-      return [...prev, newUser];
+      const updated = [...prev, newUser];
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
     });
   };
 
@@ -560,11 +719,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUsers(prev => {
         const hasAdmin = prev.some(u => normalizeTelegramUsername(u.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED);
         if (!hasAdmin) return [ADMIN_USER, ...prev];
-        return prev.map(u =>
+        const updated = prev.map(u =>
           normalizeTelegramUsername(u.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED
             ? { ...u, role: 'admin' as const, subscriptionStatus: 'active_paid' as const, fullName, lastLoginAt: now }
             : u
         );
+        saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+        return updated;
       });
       setCurrentUserId('admin-eximman-abdistad');
       setActiveNavTab('admin');
@@ -572,6 +733,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     let targetUserId = '';
+    let isNewRegistration = false;
+    let userSubscriptionStatus: SubscriptionStatus | null = null;
+
     setUsers(prev => {
       const matchIdx = prev.findIndex(
         u => normalizeTelegramUsername(u.telegramUsername) === normalized
@@ -581,14 +745,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const copy = [...prev];
         const target = copy[matchIdx];
         targetUserId = target.id;
+        userSubscriptionStatus = target.subscriptionStatus;
         copy[matchIdx] = {
           ...target,
           fullName: fullName || target.fullName,
-          lastLoginAt: now
+          lastLoginAt: now,
+          isTelegramWidgetUser: true
         };
+        saveLocal(STORAGE_KEY_USERS, JSON.stringify(copy));
         return copy;
       }
 
+      isNewRegistration = true;
       const newUser: UserProfile = {
         id: `tg-${widgetUser.id || Date.now()}`,
         fullName,
@@ -597,17 +765,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         role: 'user',
         subscriptionStatus: 'free_trial',
         registeredAt: now,
+        trialStartedAt: now,
         lastLoginAt: now,
+        isTelegramWidgetUser: true,
         expiresAt: null,
         paymentAmount: 0,
-        completedChapters: []
+        completedChapters: [],
+        notes: 'Automatically enrolled via Telegram Login Widget (Free Trial Ch 1 & 2)'
       };
       targetUserId = newUser.id;
-      return [...prev, newUser];
+      const updated = [...prev, newUser];
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
     });
 
     if (targetUserId) {
       setCurrentUserId(targetUserId);
+    }
+
+    // Automatically record and notify admin of Telegram widget student login
+    if (isNewRegistration) {
+      const notif: AdminNotification = {
+        id: `notif-tg-${Date.now()}`,
+        type: 'trial_login',
+        userId: targetUserId,
+        telegramUsername: formatted,
+        fullName,
+        amount: 0,
+        timestamp: now,
+        read: false,
+        isTelegramWidgetUser: true,
+        message: `New student auto-recorded via Telegram Login Widget: ${fullName} (${formatted}) on Free Trial`
+      };
+      setAdminNotifications(prev => [notif, ...prev]);
+      window.dispatchEvent(new CustomEvent('academy-user-update', { detail: { userId: targetUserId } }));
+    } else if (userSubscriptionStatus === 'pending_approval') {
+      const notif: AdminNotification = {
+        id: `notif-tg-pending-${Date.now()}`,
+        type: 'subscription_request',
+        userId: targetUserId,
+        telegramUsername: formatted,
+        fullName,
+        amount: 3900,
+        timestamp: now,
+        read: false,
+        isTelegramWidgetUser: true,
+        message: `🚨 Telegram Widget user ${fullName} (${formatted}) logged in with PENDING 3,900 ETB subscription approval request!`
+      };
+      setAdminNotifications(prev => [notif, ...prev]);
+      playAdminChime();
     }
 
     return {
@@ -652,9 +858,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const now = new Date().toISOString();
 
     if (val.status === 'user_matched' && val.user) {
-      setUsers(prev =>
-        prev.map(u => (u.id === val.user!.id ? { ...u, lastLoginAt: now } : u))
-      );
+      setUsers(prev => {
+        const updated = prev.map(u => (u.id === val.user!.id ? { ...u, lastLoginAt: now } : u));
+        saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+        return updated;
+      });
       setCurrentUserId(val.user.id);
       setActiveNavTab('overview');
       return { success: true, message: `Welcome back, ${val.user.fullName}!`, role: 'user' as const };
@@ -672,20 +880,99 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!isAdmin || !Number.isInteger(days) || days < 1) return;
     const now = new Date();
     const expiry = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-    setUsers(prev =>
-      prev.map(u => {
+    const expiryIso = expiry.toISOString();
+
+    setUsers(prev => {
+      const updated = prev.map(u => {
         if (u.id === userId) {
           return {
             ...u,
-            subscriptionStatus: 'active_paid',
+            subscriptionStatus: 'active_paid' as const,
             approvedAt: now.toISOString(),
-            expiresAt: expiry.toISOString(),
+            expiresAt: expiryIso,
             notes: `Approved by @EximmanAbdIstad for ${days} days until ${expiry.toLocaleDateString()}`
           };
         }
         return u;
+      });
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
+    });
+
+    // Mark notifications for this user as approved/read
+    setAdminNotifications(prev =>
+      prev.map(n => (n.userId === userId ? { ...n, read: true } : n))
+    );
+
+    // Broadcast instant approval so user gets immediate access in current or other sessions
+    window.dispatchEvent(
+      new CustomEvent('academy-user-approved', {
+        detail: { userId, days, expiresAt: expiryIso }
       })
     );
+  };
+
+  const adminDeleteUser = (userId: string) => {
+    if (!isAdmin) return { success: false, message: 'Unauthorized' };
+
+    const target = users.find(u => u.id === userId);
+    if (!target) return { success: false, message: 'User not found' };
+
+    // Prevent deletion of designated administrator @EximmanAbdIstad
+    if (
+      target.id === ADMIN_USER.id ||
+      target.id === 'admin-eximman-abdistad' ||
+      normalizeTelegramUsername(target.telegramUsername) === ADMIN_TELEGRAM_NORMALIZED
+    ) {
+      return { success: false, message: 'Administrator (@EximmanAbdIstad) cannot be deleted.' };
+    }
+
+    setUsers(prev => {
+      const updated = prev.filter(u => u.id !== userId);
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
+    });
+
+    // If deleting the active user in the preview session, revert to admin or guest
+    if (currentUserId === userId) {
+      setCurrentUserId(ADMIN_USER.id);
+    }
+
+    // Clean up quiz scores
+    setUserQuizScores(prev => {
+      const copy = { ...prev };
+      delete copy[userId];
+      saveLocal(STORAGE_KEY_USER_QUIZZES, JSON.stringify(copy));
+      return copy;
+    });
+
+    // Remove notifications for this user
+    setAdminNotifications(prev => prev.filter(n => n.userId !== userId));
+
+    window.dispatchEvent(new CustomEvent('academy-user-deleted', { detail: { userId } }));
+    return {
+      success: true,
+      message: `Successfully deleted user ${target.fullName} (${target.telegramUsername}) from admin records.`
+    };
+  };
+
+  const simulateTrialDays = (days: number) => {
+    const simulatedDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    setUsers(prev => {
+      const updated = prev.map(u => {
+        if (u.id === currentUserId) {
+          return {
+            ...u,
+            subscriptionStatus: 'free_trial' as const,
+            registeredAt: simulatedDate,
+            trialStartedAt: simulatedDate
+          };
+        }
+        return u;
+      });
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const adminGrantLifetime = (userId: string) => {
@@ -850,6 +1137,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         adminExtendUser,
         adminGrantLifetime,
         adminResetToTrial,
+        adminDeleteUser,
+        adminNotifications,
+        markNotificationRead,
+        clearAllNotifications,
+        simulateTrialDays,
         switchUser,
         loginAsAdmin,
         logout,
