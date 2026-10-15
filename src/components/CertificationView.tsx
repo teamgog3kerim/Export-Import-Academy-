@@ -621,7 +621,7 @@ export const CertificationView: React.FC = () => {
                   <button
                     onClick={() => {
                       setShowIncompleteAlert(false);
-                      setActiveNavTab('quizzes');
+                      setActiveNavTab('quiz_center');
                     }}
                     className="px-3 py-1.5 bg-sky-700 hover:bg-sky-800 text-white rounded-xl font-bold text-[11px] shrink-0 transition"
                   >

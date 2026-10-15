@@ -87,33 +87,6 @@ export const TelegramLoginWidget: React.FC<Props> = ({
           </div>
         )}
         <div ref={containerRef} className="flex justify-center" />
-
-        {/* Fallback & Quick Test Widget Trigger for Previews/Iframe */}
-        <div className="mt-2 flex flex-col items-center gap-1.5 w-full">
-          <button
-            type="button"
-            onClick={() => {
-              if (window.onTelegramAuth) {
-                window.onTelegramAuth({
-                  id: 84920134,
-                  first_name: 'Dawit',
-                  last_name: 'Haile',
-                  username: 'Dawit_Trade',
-                  auth_date: Math.floor(Date.now() / 1000),
-                  hash: 'verified_telegram_widget_hash'
-                });
-              }
-            }}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#229ed9] hover:bg-[#1b8ec5] active:bg-[#177ea5] text-white text-xs font-bold transition shadow-xs"
-            title="Authenticate instantly using verified Telegram Widget profile"
-          >
-            <Send className="h-3.5 w-3.5 text-white" />
-            <span>One-Click Widget Auth: @Dawit_Trade</span>
-          </button>
-          <span className="text-[10px] text-neutral-400 dark:text-neutral-500">
-            Auto-records to Admin Records upon login (Trial or Subscription)
-          </span>
-        </div>
       </div>
 
       {feedback && (

@@ -165,7 +165,14 @@ export const GUEST_STUDENT_USER: UserProfile = {
 
 // Filter out sample dummy accounts from previous versions
 const isSampleUserId = (id: string) =>
-  ['student-01', 'student-02', 'student-03', 'student-04'].includes(id);
+  ['student-01', 'student-02', 'student-03', 'student-04', 'tg-84920134', '84920134'].includes(id);
+
+const isRemovedUser = (u: UserProfile) => {
+  if (isSampleUserId(u.id) || u.id === 'admin-eximman-bot') return true;
+  const username = (u.telegramUsername || '').toLowerCase();
+  const name = (u.fullName || '').toLowerCase();
+  return username.includes('dawit') || name.includes('dawit');
+};
 
 const INITIAL_USERS: UserProfile[] = [ADMIN_USER];
 
@@ -179,7 +186,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length) {
           const cleanList = parsed
-            .filter(u => !isSampleUserId(u.id) && u.id !== 'admin-eximman-bot')
+            .filter(u => !isRemovedUser(u))
             .map(u => {
               // Only @EximmanAbdIstad can be admin
               if (u.role === 'admin' && normalizeTelegramUsername(u.telegramUsername) !== ADMIN_TELEGRAM_NORMALIZED) {
@@ -190,10 +197,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const hasAdmin = cleanList.some(
             u => isAdminTelegram(u.telegramUsername) && u.role === 'admin'
           );
-          if (!hasAdmin) {
-            return [ADMIN_USER, ...cleanList];
+          const finalList = hasAdmin ? cleanList : [ADMIN_USER, ...cleanList];
+          if (parsed.length !== cleanList.length) {
+            saveLocal(STORAGE_KEY_USERS, JSON.stringify(finalList));
           }
-          return cleanList.length ? cleanList : INITIAL_USERS;
+          return finalList.length ? finalList : INITIAL_USERS;
         }
       }
     } catch (e) {
@@ -216,7 +224,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return 'guest-student';
       }
-      if (stored && !isSampleUserId(stored) && stored !== 'admin-eximman-bot') return stored;
+      if (stored && !isSampleUserId(stored) && stored !== 'admin-eximman-bot') {
+        const storedUsers = localStorage.getItem(STORAGE_KEY_USERS);
+        if (storedUsers) {
+          const parsed = JSON.parse(storedUsers);
+          const u = parsed.find((p: UserProfile) => p.id === stored);
+          if (u && isRemovedUser(u)) return 'guest-student';
+        }
+        return stored;
+      }
     } catch (e) {
       console.error(e);
     }
@@ -286,7 +302,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const stored = localStorage.getItem(STORAGE_KEY_ADMIN_NOTIFS);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          const cleanNotifs = parsed.filter(n => {
+            const msg = (n.message || '').toLowerCase();
+            const user = (n.telegramUsername || '').toLowerCase();
+            const name = (n.userName || '').toLowerCase();
+            return !msg.includes('dawit') && !user.includes('dawit') && !name.includes('dawit');
+          });
+          if (cleanNotifs.length !== parsed.length) {
+            saveLocal(STORAGE_KEY_ADMIN_NOTIFS, JSON.stringify(cleanNotifs));
+          }
+          return cleanNotifs;
+        }
       }
     } catch (e) {
       console.error(e);

@@ -440,9 +440,9 @@ export const AdminDashboard: React.FC = () => {
                 const randomId = Math.floor(10000000 + Math.random() * 90000000);
                 const testUser = {
                   id: randomId,
-                  first_name: 'Dawit',
-                  last_name: 'Haile',
-                  username: `Dawit_Exim_${randomId.toString().slice(-4)}`,
+                  first_name: 'Abebe',
+                  last_name: 'Kebede',
+                  username: `Trader_${randomId.toString().slice(-4)}`,
                   auth_date: Math.floor(Date.now() / 1000),
                   hash: 'verified_simulated_hash'
                 };
