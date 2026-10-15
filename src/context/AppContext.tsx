@@ -88,6 +88,8 @@ interface AppContextType {
   issueCertificate: () => void;
   quizScores: Record<string, { score: number; maxScore: number; date: string }>;
   recordQuizScore: (chapterId: string, score: number, maxScore: number) => void;
+  completeAllCoursesAndQuizzes: () => void;
+  resetCoursesAndQuizzes: () => void;
 }
 
 const STORAGE_KEY_USERS = 'ethio_impex_users_v6';
@@ -535,12 +537,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const issueCertificate = () => {
-    if (completedChaptersCount !== ALL_CHAPTERS.length) return;
+    const chaptersWithQuizzes = ALL_CHAPTERS.length;
+    const completedQuizzes = Object.keys(quizScores).length;
+    if (completedChaptersCount !== ALL_CHAPTERS.length || completedQuizzes < chaptersWithQuizzes) return;
     const certCode = `ET-IMPEX-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const now = new Date().toISOString();
 
-    setUsers(prev =>
-      prev.map(u => {
+    setUsers(prev => {
+      const updated = prev.map(u => {
         if (u.id === currentUserId) {
           return {
             ...u,
@@ -549,8 +553,72 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           };
         }
         return u;
-      })
-    );
+      });
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const completeAllCoursesAndQuizzes = () => {
+    const allIds = ALL_CHAPTERS.map(ch => ch.id);
+    const today = new Date().toISOString().split('T')[0];
+
+    setUsers(prev => {
+      const updated = prev.map(u => {
+        if (u.id === currentUserId) {
+          return {
+            ...u,
+            completedChapters: allIds
+          };
+        }
+        return u;
+      });
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
+    });
+
+    const mockScores: Record<string, { score: number; maxScore: number; date: string }> = {};
+    ALL_CHAPTERS.forEach(ch => {
+      mockScores[ch.id] = {
+        score: ch.quiz.length,
+        maxScore: ch.quiz.length,
+        date: today
+      };
+    });
+
+    setUserQuizScores(prev => {
+      const updated = {
+        ...prev,
+        [currentUserId]: mockScores
+      };
+      saveLocal(STORAGE_KEY_USER_QUIZZES, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const resetCoursesAndQuizzes = () => {
+    setUsers(prev => {
+      const updated = prev.map(u => {
+        if (u.id === currentUserId) {
+          return {
+            ...u,
+            completedChapters: [],
+            certificateId: undefined,
+            certificateIssuedAt: undefined
+          };
+        }
+        return u;
+      });
+      saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
+      return updated;
+    });
+
+    setUserQuizScores(prev => {
+      const copy = { ...prev };
+      delete copy[currentUserId];
+      saveLocal(STORAGE_KEY_USER_QUIZZES, JSON.stringify(copy));
+      return copy;
+    });
   };
 
   const submitSubscriptionPayment = (data: {
@@ -1196,7 +1264,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         progressPercentage,
         issueCertificate,
         quizScores,
-        recordQuizScore
+        recordQuizScore,
+        completeAllCoursesAndQuizzes,
+        resetCoursesAndQuizzes
       }}
     >
       {children}
