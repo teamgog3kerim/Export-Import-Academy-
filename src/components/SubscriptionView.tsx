@@ -31,7 +31,8 @@ export const SubscriptionView: React.FC = () => {
     hasFullAccess,
     setShowPaywallModal,
     isTelegramApp,
-    telegramWebAppUser
+    telegramWebAppUser,
+    language
   } = useApp();
 
   const isGuest = currentUser.id === 'guest-student';
@@ -50,6 +51,7 @@ export const SubscriptionView: React.FC = () => {
   const [screenshotData, setScreenshotData] = useState<string>(
     currentUser.paymentScreenshot || ''
   );
+  const [honeypot, setHoneypot] = useState('');
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmittedSuccess, setIsSubmittedSuccess] = useState(
@@ -137,20 +139,39 @@ export const SubscriptionView: React.FC = () => {
     e.preventDefault();
     setErrorMessage('');
 
+    // Anti-Spam: Silent Honeypot Check
+    if (honeypot.trim()) {
+      return;
+    }
+
     if (!telegramUsername.trim()) {
-      setErrorMessage('Please provide your Telegram username (e.g. @username).');
+      setErrorMessage(
+        language === 'am'
+          ? 'እባክዎ የቴሌግራም መለያዎን ያስገቡ (ለምሳሌ፦ @username)።'
+          : 'Please provide your Telegram username (e.g. @username).'
+      );
       return;
     }
     if (!fullName.trim()) {
-      setErrorMessage('Please provide your full name.');
+      setErrorMessage(
+        language === 'am' ? 'እባክዎ ሙሉ ስምዎን ያስገቡ።' : 'Please provide your full legal name.'
+      );
       return;
     }
     if (!phoneNumber.trim()) {
-      setErrorMessage('Please enter your mobile phone number.');
+      setErrorMessage(
+        language === 'am'
+          ? 'እባክዎ የኢትዮጵያ ሞባይል ስልክ ቁጥርዎን ያስገቡ (09... ወይም 07...)።'
+          : 'Please enter your Ethiopian mobile phone number (09XXXXXXXX or 07XXXXXXXX).'
+      );
       return;
     }
     if (!screenshotData) {
-      setErrorMessage('Please upload your telebirr transfer screenshot.');
+      setErrorMessage(
+        language === 'am'
+          ? 'እባክዎ የቴሌብር ክፍያ ማስተላለፊያ ደረሰኝ ስክሪንሾት ይጫኑ።'
+          : 'Please upload your telebirr transfer screenshot proof.'
+      );
       return;
     }
 
@@ -160,13 +181,22 @@ export const SubscriptionView: React.FC = () => {
         fullName: fullName.trim(),
         phoneNumber: phoneNumber.trim(),
         telebirrTxId: telebirrTxId.trim(),
-        paymentScreenshot: screenshotData
+        paymentScreenshot: screenshotData,
+        honeypot: honeypot.trim()
       });
       triggerTelegramHaptic('success');
       setIsSubmittedSuccess(true);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMessage('Failed to save subscription request. Please retry.');
+      if (err instanceof Error) {
+        setErrorMessage(err.message);
+      } else {
+        setErrorMessage(
+          language === 'am'
+            ? 'የምዝገባ ጥያቄው አልተሳካም። እባክዎ ድጋሚ ይሞክሩ።'
+            : 'Failed to save subscription request. Please retry.'
+        );
+      }
     }
   };
 
@@ -521,6 +551,18 @@ export const SubscriptionView: React.FC = () => {
           )}
 
           <form id="payment-submission-section" onSubmit={handleSubmit} className="space-y-4">
+            {/* Anti-Spam Bot Trap Field */}
+            <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
+              <input
+                type="text"
+                name="company_tax_id_trap"
+                value={honeypot}
+                onChange={e => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
             {/* Payment Rejection Alert in Form */}
             {currentUser.subscriptionStatus === 'rejected' && (
               <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-500 rounded-2xl text-xs space-y-2 text-rose-900 dark:text-rose-100 animate-fade-in">

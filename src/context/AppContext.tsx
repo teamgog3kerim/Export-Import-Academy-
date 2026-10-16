@@ -69,6 +69,7 @@ interface AppContextType {
     phoneNumber: string;
     telebirrTxId?: string;
     paymentScreenshot: string;
+    honeypot?: string;
   }) => void;
   isAdmin: boolean;
   hasFullAccess: boolean;
@@ -654,8 +655,105 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     phoneNumber: string;
     telebirrTxId?: string;
     paymentScreenshot: string;
+    honeypot?: string;
   }) => {
+    // Anti-Spam: Silent Honeypot Trap
+    if (data.honeypot && data.honeypot.trim().length > 0) {
+      throw new Error('Spam protection: Automated submission rejected.');
+    }
+
+    // Anti-Spam: Rolling 10-minute attempt rate limit (max 5 submissions per 10 minutes)
+    const SUB_ATTEMPTS_KEY = 'ethio_sub_attempts_history';
+    try {
+      const attemptsRaw = localStorage.getItem(SUB_ATTEMPTS_KEY);
+      const currentTime = Date.now();
+      const attempts: number[] = attemptsRaw ? JSON.parse(attemptsRaw) : [];
+      const recentAttempts = attempts.filter(ts => currentTime - ts < 10 * 60 * 1000);
+      if (recentAttempts.length >= 5) {
+        throw new Error('Too many submission attempts. Please wait 10 minutes before resubmitting your payment request.');
+      }
+      recentAttempts.push(currentTime);
+      localStorage.setItem(SUB_ATTEMPTS_KEY, JSON.stringify(recentAttempts));
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('Too many submission attempts')) throw e;
+    }
+
+    // Anti-Spam: Rate limiting cooldown (15 seconds between requests)
+    const LAST_SUB_KEY = 'ethio_last_sub_timestamp';
+    try {
+      const lastSub = localStorage.getItem(LAST_SUB_KEY);
+      if (lastSub) {
+        const diffSec = (Date.now() - parseInt(lastSub, 10)) / 1000;
+        if (diffSec < 15) {
+          throw new Error('Submission cooldown: Please wait 15 seconds before resubmitting.');
+        }
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('Submission cooldown')) throw e;
+    }
+
+    // Anti-Spam: Input Sanitization & Full Name Validation
+    const cleanName = data.fullName.trim();
+    if (!cleanName || cleanName.length < 3 || cleanName.length > 70 || /<[^>]*>|https?:\/\/|www\./i.test(cleanName) || /^\d+$/.test(cleanName)) {
+      throw new Error('Please enter a valid full name (minimum 3 characters, no links or HTML).');
+    }
+
+    // Anti-Spam: Ethiopian phone number format verification
+    const cleanDigits = data.phoneNumber.replace(/[\s\-\(\)\+]/g, '');
+    const isEthPhone = /^(?:251)?[79]\d{8}$/.test(cleanDigits);
+    const isRepetitive = /^(\d)\1+$/.test(cleanDigits);
+    const isSequential = ['0912345678', '0987654321', '0712345678', '0787654321'].includes(cleanDigits);
+    const isDummy = ['0900000000', '0911111111', '0999999999', '0922222222', '0700000000', '0711111111'].includes(cleanDigits);
+    if (!isEthPhone || isRepetitive || isSequential || isDummy || cleanDigits.length < 9) {
+      throw new Error('Please enter a valid Ethiopian mobile phone number (09XXXXXXXX or 07XXXXXXXX).');
+    }
+
+    // Anti-Spam: Telegram handle validation
     const formattedTelegram = formatTelegramHandle(data.telegramUsername);
+    const handleWithoutAt = formattedTelegram.replace(/^@/, '');
+    const SPAM_HANDLES = ['bot', 'spam', 'admin', 'administrator', 'telebirr', 'test', 'guest', 'fake', 'asdf', 'user'];
+    if (
+      !handleWithoutAt ||
+      handleWithoutAt.length < 4 ||
+      handleWithoutAt.length > 32 ||
+      !/^[a-zA-Z0-9_]+$/.test(handleWithoutAt) ||
+      SPAM_HANDLES.includes(handleWithoutAt.toLowerCase())
+    ) {
+      throw new Error('Please enter a valid Telegram username (4-32 alphanumeric characters, e.g. @your_name).');
+    }
+
+    // Anti-Spam: Duplicate transaction ID check across all users
+    const rawTx = data.telebirrTxId?.trim() || '';
+    if (rawTx) {
+      const normalizedTx = rawTx.toUpperCase().replace(/\s+/g, '');
+      const fakeTxPatterns = ['123456', '1234567', '12345678', '000000', '111111', 'TEST', 'NONE', 'TELEBIRR', 'DUMMY', 'PAYMENT', 'ASDF', 'ABCDEF', 'AAAAAA', 'SAMPLE', 'NULL', 'UNDEFINED'];
+      const hasSpamWord = fakeTxPatterns.some(pat => normalizedTx.includes(pat));
+      if (hasSpamWord || normalizedTx.length < 6 || normalizedTx.length > 25 || !/^[A-Z0-9]+$/.test(normalizedTx)) {
+        throw new Error('Please provide a genuine telebirr transaction reference code from your receipt.');
+      }
+
+      const isDuplicateTx = users.some(u => {
+        if (u.id === currentUser.id) return false;
+        return (u.telebirrTxId || '').trim().toUpperCase() === normalizedTx;
+      });
+      if (isDuplicateTx) {
+        throw new Error('Duplicate transaction ID: This telebirr reference has already been submitted for another request.');
+      }
+    }
+
+    // Anti-Spam: Payment screenshot verification
+    if (
+      !data.paymentScreenshot ||
+      (data.paymentScreenshot !== 'simulated_payment_proof' &&
+        (!data.paymentScreenshot.startsWith('data:image/') || data.paymentScreenshot.length < 1500))
+    ) {
+      throw new Error('Please attach a valid telebirr payment screenshot proof (JPEG, PNG, or WebP).');
+    }
+
+    try {
+      localStorage.setItem(LAST_SUB_KEY, Date.now().toString());
+    } catch {}
+
     const now = new Date().toISOString();
     let assignedUserId = '';
 

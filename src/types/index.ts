@@ -24,6 +24,8 @@ export interface UserProfile {
   completedChapters?: string[]; // IDs of completed chapters
   certificateIssuedAt?: string;
   certificateId?: string;
+  isFlaggedSpam?: boolean;
+  spamReason?: string;
 }
 
 export interface AdminNotification {
@@ -66,31 +68,45 @@ export interface StudentProgressRecord {
 export interface QuizQuestion {
   id: string;
   question: string;
+  questionAm?: string;
   options: string[];
+  optionsAm?: string[];
   correctIndex: number;
   explanation: string;
+  explanationAm?: string;
   practicalTip?: string;
+  practicalTipAm?: string;
 }
 
 export interface ChapterSection {
   id: string;
   title: string;
+  titleAm?: string;
   content: string; // Markdown / formatted text
+  contentAm?: string;
   keyTakeaways?: string[];
+  keyTakeawaysAm?: string[];
   callout?: {
     type: 'regulation' | 'warning' | 'pro_tip' | 'formula';
     title: string;
+    titleAm?: string;
     text: string;
+    textAm?: string;
   };
 }
 
 export interface CaseStudy {
   title: string;
+  titleAm?: string;
   commodity: string;
+  commodityAm?: string;
   scenario: string;
+  scenarioAm?: string;
   realWorldData: Record<string, string | number>;
   logisticsWorkflow: string[];
+  logisticsWorkflowAm?: string[];
   solutionSummary: string;
+  solutionSummaryAm?: string;
 }
 
 export interface Chapter {
@@ -98,7 +114,9 @@ export interface Chapter {
   moduleId: string;
   chapterNumber: number;
   title: string;
+  titleAm?: string;
   description: string;
+  descriptionAm?: string;
   estimatedMinutes: number;
   isFreeTrialAccessible: boolean;
   sections: ChapterSection[];
@@ -113,8 +131,11 @@ export interface Module {
   id: string;
   moduleNumber: number;
   title: string;
+  titleAm?: string;
   subtitle: string;
+  subtitleAm?: string;
   description: string;
+  descriptionAm?: string;
   chapters: Chapter[];
 }
 

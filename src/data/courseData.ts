@@ -1,6 +1,7 @@
 import { Module } from '../types';
+import { COURSE_AMHARIC_DATA } from './courseAmharicData';
 
-export const COURSE_MODULES: Module[] = [
+const BASE_COURSE_MODULES: Module[] = [
   {
     id: 'mod-1',
     moduleNumber: 1,
@@ -1605,3 +1606,55 @@ The minimum breakeven target to restock inventory is therefore 217.04 ETB/USD.`
     ]
   }
 ];
+
+export const COURSE_MODULES: Module[] = BASE_COURSE_MODULES.map(module => ({
+  ...module,
+  chapters: module.chapters.map(chapter => {
+    const amharic = COURSE_AMHARIC_DATA[chapter.id];
+    if (!amharic) return chapter;
+
+    return {
+      ...chapter,
+      titleAm: amharic.titleAm,
+      descriptionAm: amharic.descriptionAm,
+      sections: chapter.sections.map(section => {
+        const secAm = amharic.sections?.find(s => s.id === section.id);
+        if (!secAm) return section;
+        return {
+          ...section,
+          titleAm: secAm.titleAm,
+          contentAm: secAm.contentAm,
+          keyTakeawaysAm: secAm.keyTakeawaysAm,
+          callout: section.callout
+            ? {
+                ...section.callout,
+                titleAm: secAm.callout?.titleAm,
+                textAm: secAm.callout?.textAm
+              }
+            : undefined
+        };
+      }),
+      caseStudy: chapter.caseStudy
+        ? {
+            ...chapter.caseStudy,
+            titleAm: amharic.caseStudy?.titleAm,
+            commodityAm: amharic.caseStudy?.commodityAm,
+            scenarioAm: amharic.caseStudy?.scenarioAm,
+            logisticsWorkflowAm: amharic.caseStudy?.logisticsWorkflowAm,
+            solutionSummaryAm: amharic.caseStudy?.solutionSummaryAm
+          }
+        : undefined,
+      quiz: chapter.quiz.map(q => {
+        const qAm = amharic.quiz?.find(item => item.id === q.id);
+        if (!qAm) return q;
+        return {
+          ...q,
+          questionAm: qAm.questionAm,
+          optionsAm: qAm.optionsAm,
+          explanationAm: qAm.explanationAm
+        };
+      })
+    };
+  })
+}));
+

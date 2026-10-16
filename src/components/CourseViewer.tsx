@@ -392,7 +392,9 @@ export const CourseViewer: React.FC = () => {
             {CHAPTER_TRANSLATIONS[currentChapter.id]?.title[language] || currentChapter.title}
           </h1>
           <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">
-            {currentChapter.description}
+            {(language === 'am' && (CHAPTER_TRANSLATIONS[currentChapter.id]?.description?.am || currentChapter.descriptionAm))
+              ? (CHAPTER_TRANSLATIONS[currentChapter.id]?.description?.am || currentChapter.descriptionAm)
+              : currentChapter.description}
           </p>
 
           {currentChapter.chapterNumber === 7 && (
@@ -588,50 +590,61 @@ export const CourseViewer: React.FC = () => {
                   </div>
                 )}
 
-                {currentChapter.sections.map(sec => (
-                  <div
-                    key={sec.id}
-                    className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-xs space-y-4"
-                  >
-                    <h3 className="text-lg font-serif-title font-bold text-neutral-900 dark:text-neutral-100">
-                      {sec.title}
-                    </h3>
+                {currentChapter.sections.map(sec => {
+                  const secTitle = language === 'am' && sec.titleAm ? sec.titleAm : sec.title;
+                  const secContent = language === 'am' && sec.contentAm ? sec.contentAm : sec.content;
+                  const calloutTitle = language === 'am' && sec.callout?.titleAm ? sec.callout.titleAm : sec.callout?.title;
+                  const calloutText = language === 'am' && sec.callout?.textAm ? sec.callout.textAm : sec.callout?.text;
+                  const takeaways =
+                    language === 'am' && sec.keyTakeawaysAm && sec.keyTakeawaysAm.length > 0
+                      ? sec.keyTakeawaysAm
+                      : sec.keyTakeaways;
 
-                    <div className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-line space-y-3">
-                      {sec.content}
+                  return (
+                    <div
+                      key={sec.id}
+                      className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-xs space-y-4"
+                    >
+                      <h3 className="text-lg font-serif-title font-bold text-neutral-900 dark:text-neutral-100">
+                        {secTitle}
+                      </h3>
+
+                      <div className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-line space-y-3">
+                        {secContent}
+                      </div>
+
+                      {/* Regulation or Pro Tip Callout Box */}
+                      {sec.callout && (
+                        <div className="bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-600 p-4 rounded-r-xl space-y-1">
+                          <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-bold text-xs uppercase tracking-wider">
+                            <AlertCircle className="w-4 h-4 text-amber-600" />
+                            <span>{calloutTitle}</span>
+                          </div>
+                          <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+                            {calloutText}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Key Takeaways */}
+                      {takeaways && takeaways.length > 0 && (
+                        <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800">
+                          <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">
+                            {language === 'am' ? 'ዋና ዋና የአመራር ነጥቦች' : 'Key Executive Takeaways'}
+                          </div>
+                          <ul className="space-y-1.5 text-xs text-neutral-600 dark:text-neutral-400">
+                            {takeaways.map((point, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-
-                    {/* Regulation or Pro Tip Callout Box */}
-                    {sec.callout && (
-                      <div className="bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-600 p-4 rounded-r-xl space-y-1">
-                        <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-bold text-xs uppercase tracking-wider">
-                          <AlertCircle className="w-4 h-4 text-amber-600" />
-                          <span>{sec.callout.title}</span>
-                        </div>
-                        <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
-                          {sec.callout.text}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Key Takeaways */}
-                    {sec.keyTakeaways && sec.keyTakeaways.length > 0 && (
-                      <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800">
-                        <div className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-2">
-                          Key Executive Takeaways
-                        </div>
-                        <ul className="space-y-1.5 text-xs text-neutral-600 dark:text-neutral-400">
-                          {sec.keyTakeaways.map((point, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                              <span>{point}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* Export Commodity Document Checklist Interactive Gateway Banner */}
                 <div className="bg-gradient-to-r from-amber-900/10 via-amber-800/10 to-stone-900/10 dark:from-amber-950/40 dark:via-stone-900/40 dark:to-neutral-900 border border-amber-300 dark:border-amber-800/80 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -665,10 +678,12 @@ export const CourseViewer: React.FC = () => {
               <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-xs space-y-6">
                 <div>
                   <h3 className="text-lg font-serif-title font-bold text-neutral-900 dark:text-neutral-100">
-                    Process Roadmap & Operational Architecture
+                    {language === 'am' ? 'የአሰራር ፍሰትና የሎጂስቲክስ ካርታ' : 'Process Roadmap & Operational Architecture'}
                   </h3>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                    Visual end-to-end procedural workflow as practiced in Ethiopian commercial logistics.
+                    {language === 'am'
+                      ? 'በኢትዮጵያ የውጭ ንግድ የሚተገበር ደረጃ በደረጃ የሥራ ፍሰት።'
+                      : 'Visual end-to-end procedural workflow as practiced in Ethiopian commercial logistics.'}
                   </p>
                 </div>
 
@@ -681,10 +696,12 @@ export const CourseViewer: React.FC = () => {
                           1
                         </div>
                         <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mt-2">
-                          Port of Djibouti (Doraleh)
+                          {language === 'am' ? 'የጅቡቲ ወደብ (ዶራሌህ)' : 'Port of Djibouti (Doraleh)'}
                         </div>
                         <div className="text-[11px] text-neutral-500 mt-1">
-                          Vessel discharge, THC fees (386,530 ETB/unit), customs transit seal.
+                          {language === 'am'
+                            ? 'የመርከብ ጭነት ማራገፍ፣ የTHC ክፍያዎች (386,530 ብር/ኮንቴይነር)፣ የጉምሩክ ትራንዚት ማህተም።'
+                            : 'Vessel discharge, THC fees (386,530 ETB/unit), customs transit seal.'}
                         </div>
                       </div>
 
@@ -693,10 +710,12 @@ export const CourseViewer: React.FC = () => {
                           2
                         </div>
                         <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mt-2">
-                          Transit Corridor Trucking
+                          {language === 'am' ? 'የትራንዚት ኮሪደር ትራንስፖርት' : 'Transit Corridor Trucking'}
                         </div>
                         <div className="text-[11px] text-neutral-500 mt-1">
-                          Galafi border crossing, 850km transit (549,194 ETB/unit trucking).
+                          {language === 'am'
+                            ? 'የጋላፊ ኬላ ማቋረጫ፣ 850 ኪ.ሜ የየብስ ጉዞ (549,194 ብር/ኮንቴይነር የትራንስፖርት ወጪ)።'
+                            : 'Galafi border crossing, 850km transit (549,194 ETB/unit trucking).'}
                         </div>
                       </div>
 
@@ -705,10 +724,12 @@ export const CourseViewer: React.FC = () => {
                           3
                         </div>
                         <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mt-2">
-                          Mojo / Indode Dry Port
+                          {language === 'am' ? 'የሞጆ / ኢንዶዴ ደረቅ ወደብ' : 'Mojo / Indode Dry Port'}
                         </div>
                         <div className="text-[11px] text-neutral-500 mt-1">
-                          e-SAD declaration, Customs inspection (Green/Yellow/Red channel).
+                          {language === 'am'
+                            ? 'የe-SAD ዲክላራሲዮን፣ የጉምሩክ ምርመራ (አረንጓዴ/ቢጫ/ቀይ መስመር)።'
+                            : 'e-SAD declaration, Customs inspection (Green/Yellow/Red channel).'}
                         </div>
                       </div>
 
@@ -717,10 +738,12 @@ export const CourseViewer: React.FC = () => {
                           4
                         </div>
                         <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100 mt-2">
-                          Delivery & Assembly
+                          {language === 'am' ? 'ርክክብና ገጣጣሚ ማዕከል' : 'Delivery & Assembly'}
                         </div>
                         <div className="text-[11px] text-neutral-500 mt-1">
-                          Transport to Anhama warehouse (35k ETB), assembly (2.4M ETB).
+                          {language === 'am'
+                            ? 'ወደ አስመጪው መጋዘን ማጓጓዝ (35 ሺህ ብር)፣ ዕቃ መገጣጠምና ርክክብ (2.4 ሚሊዮን ብር)።'
+                            : 'Transport to Anhama warehouse (35k ETB), assembly (2.4M ETB).'}
                         </div>
                       </div>
                     </div>
@@ -731,35 +754,51 @@ export const CourseViewer: React.FC = () => {
                 {(currentChapter.diagramType === 'tax_cascade' || currentChapter.moduleId === 'mod-4') && (
                   <div className="space-y-3">
                     <div className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                      Ethiopian Customs Cascading Tax Hierarchy
+                      {language === 'am' ? 'የኢትዮጵያ ጉምሩክ ባለ 7 እርከን የታክስ ቅደም-ተከተል' : 'Ethiopian Customs Cascading Tax Hierarchy'}
                     </div>
                     <div className="border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden divide-y divide-neutral-200 dark:divide-neutral-700 text-xs">
                       <div className="p-3 bg-neutral-50 dark:bg-neutral-800 flex justify-between items-center">
-                        <span className="font-semibold">Step 1 · Duty Paying Value (DPV)</span>
-                        <span className="font-mono text-neutral-600 dark:text-neutral-400">CIF ETB = FOB + Freight + Insurance</span>
+                        <span className="font-semibold">
+                          {language === 'am' ? 'እርከን 1 · የቀረጥ መክፈያ ዋጋ (DPV)' : 'Step 1 · Duty Paying Value (DPV)'}
+                        </span>
+                        <span className="font-mono text-neutral-600 dark:text-neutral-400">
+                          CIF {language === 'am' ? 'ብር' : 'ETB'} = FOB + Freight + Insurance
+                        </span>
                       </div>
                       <div className="p-3 bg-white dark:bg-neutral-900 flex justify-between items-center">
-                        <span className="font-semibold">Step 2 · Import Customs Duty (Code 01)</span>
+                        <span className="font-semibold">
+                          {language === 'am' ? 'እርከን 2 · የጉምሩክ መደበኛ ቀረጥ (ኮድ 01)' : 'Step 2 · Import Customs Duty (Code 01)'}
+                        </span>
                         <span className="font-mono text-neutral-600 dark:text-neutral-400">CIF × Duty % (0% - 35%)</span>
                       </div>
                       <div className="p-3 bg-white dark:bg-neutral-900 flex justify-between items-center">
-                        <span className="font-semibold">Step 3 · Excise Tax (Code 03)</span>
+                        <span className="font-semibold">
+                          {language === 'am' ? 'እርከን 3 · የኤክሳይዝ ታክስ (ኮድ 03)' : 'Step 3 · Excise Tax (Code 03)'}
+                        </span>
                         <span className="font-mono text-neutral-600 dark:text-neutral-400">(CIF + Duty) × Excise %</span>
                       </div>
                       <div className="p-3 bg-white dark:bg-neutral-900 flex justify-between items-center">
-                        <span className="font-semibold">Step 4 · Surtax (Code 05)</span>
+                        <span className="font-semibold">
+                          {language === 'am' ? 'እርከን 4 · ሱር ታክስ (ኮድ 05)' : 'Step 4 · Surtax (Code 05)'}
+                        </span>
                         <span className="font-mono text-neutral-600 dark:text-neutral-400">(CIF + Duty + Excise) × 10%</span>
                       </div>
                       <div className="p-3 bg-white dark:bg-neutral-900 flex justify-between items-center">
-                        <span className="font-semibold">Step 5 · Social Welfare Tax (Code 12)</span>
+                        <span className="font-semibold">
+                          {language === 'am' ? 'እርከን 5 · ማህበራዊ ደህንነት ታክስ (ኮድ 12)' : 'Step 5 · Social Welfare Tax (Code 12)'}
+                        </span>
                         <span className="font-mono text-neutral-600 dark:text-neutral-400">CIF × 3%</span>
                       </div>
                       <div className="p-3 bg-white dark:bg-neutral-900 flex justify-between items-center font-bold text-amber-800 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20">
-                        <span>Step 6 · Value Added Tax (Code 04)</span>
+                        <span>
+                          {language === 'am' ? 'እርከን 6 · የተጨማሪ እሴት ታክስ - ቫት (ኮድ 04)' : 'Step 6 · Value Added Tax (Code 04)'}
+                        </span>
                         <span className="font-mono">(CIF + Duty + Excise + Surtax + Social Welfare) × 15%</span>
                       </div>
                       <div className="p-3 bg-white dark:bg-neutral-900 flex justify-between items-center">
-                        <span className="font-semibold">Step 7 · Withholding (Code 15) & Scanning (Code 16)</span>
+                        <span className="font-semibold">
+                          {language === 'am' ? 'እርከን 7 · ዊዝሆልዲንግ (ኮድ 15) እና ስካኒንግ (ኮድ 16)' : 'Step 7 · Withholding (Code 15) & Scanning (Code 16)'}
+                        </span>
                         <span className="font-mono text-neutral-600 dark:text-neutral-400">CIF × 3% WHT + CIF × 0.07% Scanning</span>
                       </div>
                     </div>
@@ -770,33 +809,41 @@ export const CourseViewer: React.FC = () => {
                 {(currentChapter.diagramType === 'lc_lifecycle' || currentChapter.moduleId === 'mod-2' || currentChapter.moduleId === 'mod-6') && (
                   <div className="space-y-4">
                     <div className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                      Letter of Credit (L/C) Opening to Retirement Lifecycle
+                      {language === 'am'
+                        ? 'የብድር ደብዳቤ (L/C) ከአከፋፈት እስከ ማወራረጃ ያለው ሂደት'
+                        : 'Letter of Credit (L/C) Opening to Retirement Lifecycle'}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                       <div className="p-4 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl space-y-2">
                         <div className="font-bold text-amber-900 dark:text-amber-200 text-sm">
-                          Stage 1: Opening Payments
+                          {language === 'am' ? 'ደረጃ 1፦ የመክፈቻ ክፍያዎች' : 'Stage 1: Opening Payments'}
                         </div>
                         <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                          Importer pays 30% to 50% Margin cash hold, 4% bank commission, 15% VAT on commission, and SWIFT transmission fees.
+                          {language === 'am'
+                            ? 'አስመጪው ከ30% እስከ 50% የማርጅን ጥሬ ገንዘብ፣ የ4% የባንክ ኮሚሽን፣ 15% ቫትና የስዊፍት (SWIFT) ክፍያ ይከፍላል።'
+                            : 'Importer pays 30% to 50% Margin cash hold, 4% bank commission, 15% VAT on commission, and SWIFT transmission fees.'}
                         </p>
                       </div>
 
                       <div className="p-4 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl space-y-2">
                         <div className="font-bold text-blue-900 dark:text-blue-200 text-sm">
-                          Stage 2: 60-90 Days Transit
+                          {language === 'am' ? 'ደረጃ 2፦ የ60-90 ቀናት የጉዞ ጊዜ' : 'Stage 2: 60-90 Days Transit'}
                         </div>
                         <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                          Supplier ships cargo from China to Djibouti. Importer monitors currency exchange rate shifts (+1.8% to +2.5% monthly).
+                          {language === 'am'
+                            ? 'አቅራቢው ጭነቱን በመርከብ ይልካል። አስመጪው የምንዛሪ ለውጥ ጭማሪን (በየወሩ +1.8% እስከ +2.5%) ይከታተላል።'
+                            : 'Supplier ships cargo from China to Djibouti. Importer monitors currency exchange rate shifts (+1.8% to +2.5% monthly).'}
                         </p>
                       </div>
 
                       <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl space-y-2">
                         <div className="font-bold text-emerald-900 dark:text-emerald-200 text-sm">
-                          Stage 3: Settlement Debit
+                          {language === 'am' ? 'ደረጃ 3፦ የሰነድ ማወራረጃ' : 'Stage 3: Settlement Debit'}
                         </div>
                         <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                          Original documents arrive. Bank settles remaining 50% or 70% at new settlement rate + 2.5% statutory NBE fee.
+                          {language === 'am'
+                            ? 'ዋና ሰነዶች ደርሰው ባንኩ የቀረውን 50% ወይም 70% በወቅቱ የምንዛሪ ተመን + 2.5% የብሔራዊ ባንክ ክፍያ በማስላት ሂሳቡን ያወራርዳል።'
+                            : 'Original documents arrive. Bank settles remaining 50% or 70% at new settlement rate + 2.5% statutory NBE fee.'}
                         </p>
                       </div>
                     </div>
@@ -807,42 +854,42 @@ export const CourseViewer: React.FC = () => {
                 {currentChapter.diagramType === 'port_comparison' && (
                   <div className="space-y-4">
                     <div className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                      Regional Maritime Corridor Comparison Matrix
+                      {language === 'am' ? 'የቀጠናው የባህር ኮሪደሮች የንጽጽር ማትሪክስ' : 'Regional Maritime Corridor Comparison Matrix'}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                       <div className="p-4 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 rounded-xl space-y-2">
                         <span className="font-bold text-neutral-900 dark:text-neutral-100 block text-sm">
-                          1. Djibouti (Doraleh DCT / DMP)
+                          {language === 'am' ? '1. ጅቡቲ (ዶራሌህ DCT / DMP)' : '1. Djibouti (Doraleh DCT / DMP)'}
                         </span>
                         <div className="text-neutral-600 dark:text-neutral-400 space-y-1">
-                          <div><strong>Volume:</strong> 90% of Ethiopian foreign trade</div>
-                          <div><strong>Distance to Addis:</strong> 850 km</div>
-                          <div><strong>Advantage:</strong> Direct electric railway to Mojo</div>
-                          <div><strong>Constraint:</strong> High port tariffs & container demurrage</div>
+                          <div><strong>{language === 'am' ? 'የጭነት መጠን፦' : 'Volume:'}</strong> {language === 'am' ? '90% የኢትዮጵያ የውጭ ንግድ' : '90% of Ethiopian foreign trade'}</div>
+                          <div><strong>{language === 'am' ? 'ርቀት ወደ አዲስ አበባ፦' : 'Distance to Addis:'}</strong> 850 km</div>
+                          <div><strong>{language === 'am' ? 'ጥቅም፦' : 'Advantage:'}</strong> {language === 'am' ? 'ቀጥታ የኤሌክትሪክ ባቡር መስመር ወደ ሞጆ' : 'Direct electric railway to Mojo'}</div>
+                          <div><strong>{language === 'am' ? 'ተግዳሮት፦' : 'Constraint:'}</strong> {language === 'am' ? 'ከፍተኛ የወደብ ታሪፍና የዲመሬጅ ስጋት' : 'High port tariffs & container demurrage'}</div>
                         </div>
                       </div>
 
                       <div className="p-4 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 rounded-xl space-y-2">
                         <span className="font-bold text-amber-900 dark:text-amber-200 block text-sm">
-                          2. Port of Berbera (DP World)
+                          {language === 'am' ? '2. የበርበራ ወደብ (DP World)' : '2. Port of Berbera (DP World)'}
                         </span>
                         <div className="text-neutral-600 dark:text-neutral-300 space-y-1">
-                          <div><strong>Volume:</strong> Rapidly growing Eastern corridor</div>
-                          <div><strong>Distance to Dire Dawa:</strong> 310 km (40% shorter)</div>
-                          <div><strong>Advantage:</strong> Fastest transit for Eastern Free Trade Zone</div>
-                          <div><strong>Constraint:</strong> Bilateral customs transit formalities</div>
+                          <div><strong>{language === 'am' ? 'የጭነት መጠን፦' : 'Volume:'}</strong> {language === 'am' ? 'በፍጥነት በማደግ ላይ ያለ የምስራቅ ኮሪደር' : 'Rapidly growing Eastern corridor'}</div>
+                          <div><strong>{language === 'am' ? 'ርቀት ወደ ድሬዳዋ፦' : 'Distance to Dire Dawa:'}</strong> 310 km (40% shorter)</div>
+                          <div><strong>{language === 'am' ? 'ጥቅም፦' : 'Advantage:'}</strong> {language === 'am' ? 'ለምስራቅ ነፃ የንግድ ቀጠና እጅግ ፈጣን' : 'Fastest transit for Eastern Free Trade Zone'}</div>
+                          <div><strong>{language === 'am' ? 'ተግዳሮት፦' : 'Constraint:'}</strong> {language === 'am' ? 'የሁለትዮሽ ጉምሩክና ትራንዚት ስምምነት አሰራር' : 'Bilateral customs transit formalities'}</div>
                         </div>
                       </div>
 
                       <div className="p-4 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 rounded-xl space-y-2">
                         <span className="font-bold text-neutral-900 dark:text-neutral-100 block text-sm">
-                          3. Port of Lamu (LAPSSET)
+                          {language === 'am' ? '3. የላሙ ወደብ (LAPSSET)' : '3. Port of Lamu (LAPSSET)'}
                         </span>
                         <div className="text-neutral-600 dark:text-neutral-400 space-y-1">
-                          <div><strong>Volume:</strong> Southern Ethiopia gateway</div>
-                          <div><strong>Distance to Hawassa:</strong> ~750 km</div>
-                          <div><strong>Advantage:</strong> Ultra-deep natural harbor</div>
-                          <div><strong>Constraint:</strong> Cross-border road infrastructure phases</div>
+                          <div><strong>{language === 'am' ? 'የጭነት መጠን፦' : 'Volume:'}</strong> {language === 'am' ? 'የደቡብ ኢትዮጵያ መግቢያ በር' : 'Southern Ethiopia gateway'}</div>
+                          <div><strong>{language === 'am' ? 'ርቀት ወደ ሀዋሳ፦' : 'Distance to Hawassa:'}</strong> ~750 km</div>
+                          <div><strong>{language === 'am' ? 'ጥቅም፦' : 'Advantage:'}</strong> {language === 'am' ? 'ጥልቅ የተፈጥሮ ወደብ' : 'Ultra-deep natural harbor'}</div>
+                          <div><strong>{language === 'am' ? 'ተግዳሮት፦' : 'Constraint:'}</strong> {language === 'am' ? 'የድንበር ማቋረጫ የመንገድ ግንባታ ምዕራፎች' : 'Cross-border road infrastructure phases'}</div>
                         </div>
                       </div>
                     </div>
@@ -853,30 +900,48 @@ export const CourseViewer: React.FC = () => {
                 {currentChapter.diagramType === 'fx_hedging' && (
                   <div className="space-y-4">
                     <div className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                      Foreign Exchange Risk Protection Flow
+                      {language === 'am' ? 'የውጭ ምንዛሪ ስጋት መከላከያ የሥራ ፍሰት' : 'Foreign Exchange Risk Protection Flow'}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                       <div className="p-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl space-y-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Pillar 1</span>
-                        <div className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">Natural Export Hedge</div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                          {language === 'am' ? 'ምሰሶ 1' : 'Pillar 1'}
+                        </span>
+                        <div className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
+                          {language === 'am' ? 'የተፈጥሮ የወጪ ንግድ መከላከያ (Natural Hedge)' : 'Natural Export Hedge'}
+                        </div>
                         <p className="text-neutral-600 dark:text-neutral-400">
-                          Utilize 50% NBE Forex Retention balance to fund import L/Cs with 0% currency conversion exposure.
+                          {language === 'am'
+                            ? 'የ50% የብሔራዊ ባንክ የውጭ ምንዛሪ ማቆያ ሂሳብን በመጠቀም ለገቢ ዕቃዎች ኤል ሲ በ0% የምንዛሪ ስጋት መክፈት።'
+                            : 'Utilize 50% NBE Forex Retention balance to fund import L/Cs with 0% currency conversion exposure.'}
                         </p>
                       </div>
 
                       <div className="p-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl space-y-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Pillar 2</span>
-                        <div className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">100% Margin Lock</div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                          {language === 'am' ? 'ምሰሶ 2' : 'Pillar 2'}
+                        </span>
+                        <div className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
+                          {language === 'am' ? '100% የማርጅን መያዣ (Margin Lock)' : '100% Margin Lock'}
+                        </div>
                         <p className="text-neutral-600 dark:text-neutral-400">
-                          Negotiate full cash margin collateral with the issuing bank to freeze the exchange rate on opening day.
+                          {language === 'am'
+                            ? 'የኤል ሲ መክፈቻው ዕለት ከባንኩ ጋር በመደራደር ሙሉውን 100% በማስያዝ የምንዛሪ ተመኑ እንዳይቀየር መቆለፍ።'
+                            : 'Negotiate full cash margin collateral with the issuing bank to freeze the exchange rate on opening day.'}
                         </p>
                       </div>
 
                       <div className="p-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl space-y-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Pillar 3</span>
-                        <div className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">Sales Contract Indexing</div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                          {language === 'am' ? 'ምሰሶ 3' : 'Pillar 3'}
+                        </span>
+                        <div className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
+                          {language === 'am' ? 'የአገር ውስጥ የሽያጭ ውል ማስተካከያ' : 'Sales Contract Indexing'}
+                        </div>
                         <p className="text-neutral-600 dark:text-neutral-400">
-                          Incorporate contractual NBE exchange rate indexing clauses in local supply contracts to pass through currency adjustments.
+                          {language === 'am'
+                            ? 'በሽያጭ ውሎች ውስጥ የብሔራዊ ባንክ የምንዛሪ ተመን ማስተካከያ አንቀጾችን በማካተት የዋጋ ለውጡን ማካካስ።'
+                            : 'Incorporate contractual NBE exchange rate indexing clauses in local supply contracts to pass through currency adjustments.'}
                         </p>
                       </div>
                     </div>
@@ -887,20 +952,34 @@ export const CourseViewer: React.FC = () => {
                 {currentChapter.diagramType === 'pca_audit' && (
                   <div className="space-y-4">
                     <div className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                      Ethiopian Customs 3-Year Post-Clearance Audit Roadmap
+                      {language === 'am'
+                        ? 'የኢትዮጵያ ጉምሩክ የ3 ዓመት የድህረ-ዕቃ አወጣጥ ኦዲት (PCA)'
+                        : 'Ethiopian Customs 3-Year Post-Clearance Audit Roadmap'}
                     </div>
                     <div className="border border-neutral-200 dark:border-neutral-700 rounded-xl divide-y divide-neutral-200 dark:divide-neutral-700 text-xs">
                       <div className="p-3 bg-neutral-50 dark:bg-neutral-800 flex justify-between items-center">
-                        <span className="font-semibold">Day 0: Cargo Release at Dry Port</span>
-                        <span className="font-mono text-neutral-500">e-SAD Assessment Notice cleared</span>
+                        <span className="font-semibold">
+                          {language === 'am' ? 'ቀን 0፦ ዕቃ ከደረቅ ወደብ መልቀቅ' : 'Day 0: Cargo Release at Dry Port'}
+                        </span>
+                        <span className="font-mono text-neutral-500">
+                          {language === 'am' ? 'የe-SAD ግብር ክፍያ ማረጋገጫ ተጠናቋል' : 'e-SAD Assessment Notice cleared'}
+                        </span>
                       </div>
                       <div className="p-3 bg-white dark:bg-neutral-900 flex justify-between items-center">
-                        <span className="font-semibold">Year 1 to 3: Statutory Audit Window</span>
-                        <span className="font-mono text-neutral-500">PCA Directorate can request transaction records</span>
+                        <span className="font-semibold">
+                          {language === 'am' ? 'ከዓመት 1 እስከ 3፦ ሕጋዊ የኦዲት መስኮት' : 'Year 1 to 3: Statutory Audit Window'}
+                        </span>
+                        <span className="font-mono text-neutral-500">
+                          {language === 'am' ? 'የPCA ዳይሬክቶሬት የግብይት ሰነዶችን የመመርመር ስልጣን አለው' : 'PCA Directorate can request transaction records'}
+                        </span>
                       </div>
                       <div className="p-3 bg-white dark:bg-neutral-900 flex justify-between items-center font-bold text-amber-800 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20">
-                        <span>Mandatory Document Archive (5 Years)</span>
-                        <span className="font-mono">Invoices, Swift Advices, Bill of Lading & Stock Cards</span>
+                        <span>{language === 'am' ? 'የግዴታ የሰነዶች ማቆያ (5 ዓመታት)' : 'Mandatory Document Archive (5 Years)'}</span>
+                        <span className="font-mono">
+                          {language === 'am'
+                            ? 'ኢንቮይሶች፣ የስዊፍት ማረጋገጫዎች፣ የባህር ቦሌቶ (B/L) እና የመጋዘን ካርዶች'
+                            : 'Invoices, Swift Advices, Bill of Lading & Stock Cards'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -914,27 +993,30 @@ export const CourseViewer: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                     <Briefcase className="w-4 h-4" />
-                    <span>Real-World Business Simulation</span>
+                    <span>{language === 'am' ? 'ተግባራዊ የንግድ ልምምድ' : 'Real-World Business Simulation'}</span>
                   </div>
                   <h3 className="text-xl font-serif-title font-bold text-neutral-900 dark:text-neutral-50 mt-1">
-                    {currentChapter.caseStudy.title}
+                    {language === 'am' && currentChapter.caseStudy.titleAm ? currentChapter.caseStudy.titleAm : currentChapter.caseStudy.title}
                   </h3>
                   <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                    Target Commodity: <strong>{currentChapter.caseStudy.commodity}</strong>
+                    {language === 'am' ? 'ዒላማ የተደረገው ሸቀጥ፦ ' : 'Target Commodity: '}
+                    <strong>
+                      {language === 'am' && currentChapter.caseStudy.commodityAm ? currentChapter.caseStudy.commodityAm : currentChapter.caseStudy.commodity}
+                    </strong>
                   </div>
                 </div>
 
                 <div className="bg-neutral-50 dark:bg-neutral-800/60 p-4 rounded-xl text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
                   <div className="font-bold text-neutral-900 dark:text-neutral-100 mb-1">
-                    The Business Problem:
+                    {language === 'am' ? 'የንግድ ችግሩና ዳራው፦' : 'The Business Problem:'}
                   </div>
-                  {currentChapter.caseStudy.scenario}
+                  {language === 'am' && currentChapter.caseStudy.scenarioAm ? currentChapter.caseStudy.scenarioAm : currentChapter.caseStudy.scenario}
                 </div>
 
                 {/* Real-world Data Cards */}
                 <div>
                   <div className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">
-                    Key Financial Parameters
+                    {language === 'am' ? 'ዋና ዋና የፋይናንስ መለኪያዎች' : 'Key Financial Parameters'}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {Object.entries(currentChapter.caseStudy.realWorldData).map(([k, v]) => (
@@ -954,7 +1036,7 @@ export const CourseViewer: React.FC = () => {
                 {/* Workflow execution */}
                 <div>
                   <div className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">
-                    Executed Logistics Workflow
+                    {language === 'am' ? 'የተተገበረው የሎጂስቲክስ የሥራ ፍሰት' : 'Executed Logistics Workflow'}
                   </div>
                   <div className="space-y-2">
                     {currentChapter.caseStudy.logisticsWorkflow.map((step, idx) => (
@@ -965,7 +1047,11 @@ export const CourseViewer: React.FC = () => {
                         <span className="w-5 h-5 rounded-full bg-amber-700 text-white font-bold flex items-center justify-center shrink-0 text-[10px]">
                           {idx + 1}
                         </span>
-                        <span>{step}</span>
+                        <span>
+                          {language === 'am' && currentChapter.caseStudy?.logisticsWorkflowAm?.[idx]
+                            ? currentChapter.caseStudy.logisticsWorkflowAm[idx]
+                            : step}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -975,10 +1061,12 @@ export const CourseViewer: React.FC = () => {
                 <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl space-y-1">
                   <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
                     <Award className="w-4 h-4 text-emerald-600" />
-                    <span>Commercial Takeaway & Financial Result</span>
+                    <span>{language === 'am' ? 'የንግድና የፋይናንስ ማጠቃለያ ውጤት' : 'Commercial Takeaway & Financial Result'}</span>
                   </div>
                   <p className="text-xs text-emerald-900/90 dark:text-emerald-200/90 leading-relaxed">
-                    {currentChapter.caseStudy.solutionSummary}
+                    {language === 'am' && currentChapter.caseStudy.solutionSummaryAm
+                      ? currentChapter.caseStudy.solutionSummaryAm
+                      : currentChapter.caseStudy.solutionSummary}
                   </p>
                 </div>
               </div>
@@ -990,16 +1078,18 @@ export const CourseViewer: React.FC = () => {
                 <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
                   <div>
                     <h3 className="text-lg font-serif-title font-bold text-neutral-900 dark:text-neutral-100">
-                      Chapter Mastery Questionnaire
+                      {language === 'am' ? 'የምዕራፉ የፈተና ጥያቄዎች' : 'Chapter Mastery Questionnaire'}
                     </h3>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Test your understanding of the regulations, cost mechanics, and procedures covered in this chapter.
+                      {language === 'am'
+                        ? 'በዚህ ምዕራፍ የተካተቱትን መመሪያዎች፣ የወጪ ስሌቶችና አሰራሮች እውቀትዎን ይፈትሹ።'
+                        : 'Test your understanding of the regulations, cost mechanics, and procedures covered in this chapter.'}
                     </p>
                   </div>
                   {showResults && (
                     <div className="text-right">
                       <span className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2.5 py-1 rounded-lg">
-                        Score: {calculateScore()} / {currentChapter.quiz.length}
+                        {language === 'am' ? 'ውጤት፦' : 'Score:'} {calculateScore()} / {currentChapter.quiz.length}
                       </span>
                     </div>
                   )}
@@ -1020,7 +1110,7 @@ export const CourseViewer: React.FC = () => {
                           <span className="font-mono text-amber-700 dark:text-amber-400">
                             Q{qIndex + 1}.
                           </span>
-                          <span>{q.question}</span>
+                          <span>{language === 'am' && q.questionAm ? q.questionAm : q.question}</span>
                         </div>
 
                         <div className="space-y-2">
@@ -1038,13 +1128,15 @@ export const CourseViewer: React.FC = () => {
                               btnStyle = 'border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 font-semibold';
                             }
 
+                            const optText = language === 'am' && q.optionsAm?.[optIndex] ? q.optionsAm[optIndex] : opt;
+
                             return (
                               <button
                                 key={optIndex}
                                 onClick={() => handleOptionSelect(q.id, optIndex)}
                                 className={`w-full p-3 rounded-lg border text-left text-xs flex items-center justify-between transition-colors ${btnStyle}`}
                               >
-                                <span>{opt}</span>
+                                <span>{optText}</span>
                                 {showResults && optIndex === q.correctIndex && (
                                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                                 )}
@@ -1056,10 +1148,10 @@ export const CourseViewer: React.FC = () => {
                         {showResults && (
                           <div className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-xs space-y-1">
                             <div className="font-semibold text-neutral-800 dark:text-neutral-200">
-                              Official Regulatory Explanation:
+                              {language === 'am' ? 'ሕጋዊና መመሪያ ማጣቀሻ፦' : 'Official Regulatory Explanation:'}
                             </div>
                             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                              {q.explanation}
+                              {language === 'am' && q.explanationAm ? q.explanationAm : q.explanation}
                             </p>
                           </div>
                         )}

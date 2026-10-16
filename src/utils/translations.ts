@@ -374,7 +374,11 @@ export function translate(key: string, lang: Language, defaultText?: string): st
 /**
  * High-quality Ethiopian trade curriculum module translations
  */
-export const MODULE_TRANSLATIONS: Record<string, { title: { en: string; am: string }; subtitle: { en: string; am: string } }> = {
+export const MODULE_TRANSLATIONS: Record<string, {
+  title: { en: string; am: string };
+  subtitle: { en: string; am: string };
+  description: { en: string; am: string };
+}> = {
   'mod-1': {
     title: {
       en: 'Foundations of Ethiopian Foreign Trade & Legal Framework',
@@ -383,6 +387,10 @@ export const MODULE_TRANSLATIONS: Record<string, { title: { en: string; am: stri
     subtitle: {
       en: 'Regulatory Architecture, Licensing & Single Window (ESW)',
       am: 'የቁጥጥር ሥርዓት፣ የንግድ ፈቃድና የኤሌክትሮኒክ ነጠላ መስኮት (ESW)'
+    },
+    description: {
+      en: 'Master the core macroeconomic architecture, key institutional actors, trade licensing, and the digital Ethiopian Single Window (ESW) workflow that governs every import and export transaction in Ethiopia.',
+      am: 'በኢትዮጵያ ውስጥ ማንኛውንም የገቢና ወጪ ንግድ የሚያስተዳድሩትን የማክሮ ኢኮኖሚ መዋቅር፣ ዋና ዋና ተቋማት፣ የንግድ ፈቃድ አሰጣጥና የኤሌክትሮኒክ ነጠላ መስኮት (ESW) አሰራርን በጥልቀት ይማሩ።'
     }
   },
   'mod-2': {
@@ -393,6 +401,10 @@ export const MODULE_TRANSLATIONS: Record<string, { title: { en: string; am: stri
     subtitle: {
       en: 'Risk, Cost Allocation & Corridor Applicability',
       am: 'የስጋትና የወጪ ድልድል እንዲሁም በኢትዮጵያ ኮሪደር አጠቃቀም'
+    },
+    description: {
+      en: 'Understand the 11 ICC Incoterms rules, practical distinction between sea and multimodal terms, and strategic terms for Ethiopian dry port and sea corridors.',
+      am: '11ዱን የዓለም ንግድ ምክር ቤት የኢንኮተርምስ ደንቦች፣ የባህርና የሁለገብ ትራንስፖርት ውሎች ልዩነትና በኢትዮጵያ ወደቦች የወጪና ስጋት ክፍፍልን ይረዱ።'
     }
   },
   'mod-3': {
@@ -403,6 +415,10 @@ export const MODULE_TRANSLATIONS: Record<string, { title: { en: string; am: stri
     subtitle: {
       en: 'Letters of Credit, Margin Deposits, CAD & FX Hedging',
       am: 'የብድር ደብዳቤ (L/C)፣ የማርጅን ተቀማጭ፣ ሰነድ በከፊል (CAD) እና የውጭ ምንዛሪ'
+    },
+    description: {
+      en: 'Comprehensive guide to commercial bank trade instruments, foreign currency prioritization, margin deposits, UCP 600 rules, and LC settlement mechanics.',
+      am: 'የንግድ ባንኮች ዓለም አቀፍ የክፍያ ስልቶች፣ የውጭ ምንዛሪ ምደባ ቅደም-ተከተል፣ የማርጅን ተቀማጭ፣ የUCP 600 ደንቦችና የኤል ሲ ስሌት ዝርዝር መመሪያ።'
     }
   },
   'mod-4': {
@@ -413,6 +429,10 @@ export const MODULE_TRANSLATIONS: Record<string, { title: { en: string; am: stri
     subtitle: {
       en: 'HS Codes, DPV Calculations, 7-Tier Taxes & Exemptions',
       am: 'የኤች.ኤስ ኮዶች፣ የቀረጥ መክፈያ ዋጋ (DPV) እና ባለ 7 እርከን ታክሶች'
+    },
+    description: {
+      en: 'Step-by-step methodology for determining Duty Paying Value (DPV), calculating the 7 cascading import tax layers, and applying investment incentive privileges.',
+      am: 'የቀረጥ መክፈያ ዋጋ (DPV) አወሳሰን፣ ባለ 7 እርከን የገቢ ዕቃዎች ታክስ ቅደም-ተከተል ስሌት እና የኢንቨስትመንት ማበረታቻ መብቶችን የማስላት ተግባራዊ ዘዴ።'
     }
   },
   'mod-5': {
@@ -423,6 +443,10 @@ export const MODULE_TRANSLATIONS: Record<string, { title: { en: string; am: stri
     subtitle: {
       en: 'Djibouti Corridor, ESLSE Operations, Mojo & Demurrage Control',
       am: 'የጅቡቲ ኮሪደር፣ የባህር ትራንስፖርት ድርጅት፣ ሞጆ ወደብና የዲመሬጅ መከላከያ'
+    },
+    description: {
+      en: 'Master multimodal transport operations with ESLSE, container handling, Djibouti corridor transit clearance, Mojo dry port customs clearance, and demurrage minimization.',
+      am: 'የኢትዮጵያ ባህር ትራንስፖርትና ሎጂስቲክስ አገልግሎት ድርጅት (ESLSE) አሰራር፣ የኮንቴይነር አያያዝ፣ የጅቡቲ ትራንዚት፣ የሞጆ ወደብ ክሊራንስና የዲመሬጅ ወጪ ቅነሳ።'
     }
   },
   'mod-6': {
@@ -433,108 +457,179 @@ export const MODULE_TRANSLATIONS: Record<string, { title: { en: string; am: stri
     subtitle: {
       en: 'Coffee, Oilseeds, ECX, Retention Accounts & Export Audit',
       am: 'ቡና፣ የቅባት እህሎች፣ የኢትዮጵያ ምርት ገበያ እና የወጪ ንግድ ኦዲት'
+    },
+    description: {
+      en: 'End-to-end framework for agricultural and manufactured exports: ECX contracts, quality grading, phytosanitary clearance, 50% forex retention accounts, and audit compliance.',
+      am: 'የወጪ ንግድ አሰራር ማዕቀፍ፦ የኢትዮጵያ ምርት ገበያ (ECX) ውሎች፣ የጥራት ደረጃዎች፣ የፊቶሳኒተሪ ሰነዶች፣ የ50% የውጭ ምንዛሪ ማቆያ ሂሳብና የጉምሩክ ኦዲት።'
     }
   }
 };
 
 /**
- * High-quality Ethiopian trade chapter titles in Amharic
+ * High-quality Ethiopian trade chapter titles and descriptions in Amharic
  */
-export const CHAPTER_TRANSLATIONS: Record<string, { title: { en: string; am: string } }> = {
+export const CHAPTER_TRANSLATIONS: Record<string, {
+  title: { en: string; am: string };
+  description: { en: string; am: string };
+}> = {
   'ch-1': {
     title: {
       en: 'The Ethiopian Foreign Trade Ecosystem & Market Mechanics',
       am: 'የኢትዮጵያ የውጭ ንግድ ሥርዓትና የገበያ አሰራር መርሆዎች'
+    },
+    description: {
+      en: 'Understand NBE foreign exchange regulations, priority allocation lists, foreign currency regimes, and key institutional stakeholders.',
+      am: 'የብሔራዊ ባንክ የውጭ ምንዛሪ መመሪያዎች፣ የቅድሚያ ምደባ ዝርዝሮች፣ የገንዘብ ተመን ሥርዓትና ዋና ዋና ባለድርሻ ተቋማትን ይረዱ።'
     }
   },
   'ch-2': {
     title: {
       en: 'Trade Licensing, Registration & Ethiopian Single Window (ESW)',
       am: 'የውጭ ንግድ ፈቃድ ምዝገባና የኢትዮጵያ ነጠላ መስኮት (ESW) አጠቃቀም'
+    },
+    description: {
+      en: 'Requirements for commercial import/export permits, TIN, competence certificates, and navigating the online ESW workflow.',
+      am: 'የንግድና ቀጠናዊ ትስስር ሚኒስቴር ፈቃድ፣ የብቃት ማረጋገጫ፣ የግብር ከፋይ መለያ (TIN) እና የኢትዮጵያ ነጠላ መስኮት (ESW) አሰራር።'
     }
   },
   'ch-3': {
     title: {
       en: 'Incoterms® 2020 Fundamentals: Sea & Multi-Modal Terms',
       am: 'የኢንኮተርምስ 2020 መሠረቶች፦ የባህርና የሁለገብ ትራንስፖርት ውሎች'
+    },
+    description: {
+      en: 'Introduction to ICC rules, difference between multimodal and sea-only terms, and seller/buyer obligations.',
+      am: 'የአለም አቀፍ የንግድ ምክር ቤት (ICC) ደንቦች፣ የባህርና የሁለገብ ትራንስፖርት ውሎች ልዩነትና የሻጭ/የገዢ ግዴታዎች።'
     }
   },
   'ch-4': {
     title: {
       en: 'FOB, CFR, CIF & DAP in the Ethiopian Context',
       am: 'ኤፍ.ኦ.ቢ (FOB)፣ ሲ.ኤፍ.አር (CFR)፣ ሲ.አይ.ኤፍ (CIF) እና ዲ.ኤ.ፒ (DAP) በኢትዮጵያ አውድ'
+    },
+    description: {
+      en: 'Deep dive into why FOB Djibouti is dominant for exports, and how CFR/CIF terms interact with ESLSE freight reservation mandates.',
+      am: 'ኤፍ.ኦ.ቢ ጅቡቲ ለምን ለወጪ ንግድ እንደሚመረጥ፣ እና ሲ.ኤፍ.አር/ሲ.አይ.ኤፍ ከኢትዮጵያ የባህር ትራንስፖርት ድርጅት (ESLSE) ህጎች ጋር ያለው ግንኙነት።'
     }
   },
   'ch-5': {
     title: {
       en: 'Methods of Payment: Letters of Credit (L/C), CAD & Advance Payment',
       am: 'ዓለም አቀፍ የክፍያ ዘዴዎች፦ የብድር ደብዳቤ (L/C)፣ CAD እና ቅድመ ክፍያ'
+    },
+    description: {
+      en: 'Mechanics of documentary credits, cash against documents, and open account trading in Ethiopian cross-border banking.',
+      am: 'የሰነድ ብድር ደብዳቤ (L/C)፣ ሰነድ በከፊል ክፍያ (CAD) እና ቅድመ ክፍያ በኢትዮጵያ የባንክ አሰራር ያላቸው ተግባራዊ ሂደት።'
     }
   },
   'ch-6': {
     title: {
       en: 'NBE Directives, Margin Deposit Requirements & Foreign Exchange Queues',
       am: 'የብሔራዊ ባንክ መመሪያዎች፣ የማርጅን ተቀማጭና የውጭ ምንዛሪ ምደባ'
+    },
+    description: {
+      en: 'Managing 30% margin deposit blocks, foreign currency queuing timelines, and NBE directive forex allocations.',
+      am: 'የ30% ማርጅን ተቀማጭ እግድ አያያዝ፣ የውጭ ምንዛሪ ምደባ የጊዜ ሰሌዳዎች እና የብሔራዊ ባንክ መመሪያዎች አፈጻጸም።'
     }
   },
   'ch-7': {
     title: {
       en: 'L/C Opening, Verification, Discrepancies & Settlement Mechanics',
       am: 'የኤል ሲ (L/C) አከፋፈት፣ ሰነድ ማጣራት፣ ልዩነቶችና የክፍያ ስሌት'
+    },
+    description: {
+      en: 'Step-by-step UCP 600 compliance, avoiding bank discrepancies, handling amendments, and swift final settlement.',
+      am: 'የUCP 600 ዓለም አቀፍ የሰነድ ህጎች፣ የባንክ ሰነድ ልዩነቶችን ማስቀረት፣ ማሻሻያዎችና የኤል ሲ ሂሳብ ማጠናቀቂያ ስሌት።'
     }
   },
   'ch-8': {
     title: {
       en: 'Harmonized System (HS) Tariff Classification Principles',
       am: 'የሸቀጦች ታሪፍ አመዳደብ መርሆዎች (HS Code Classification)'
+    },
+    description: {
+      en: 'Navigating the 21 Sections and 99 Chapters of the WCO tariff nomenclature and national Ethiopian tariff book.',
+      am: 'የዓለም የጉምሩክ ድርጅት (WCO) 21 ክፍሎችና 99 ምዕራፎች አወቃቀር እንዲሁም የኢትዮጵያ የጉምሩክ ታሪፍ መጽሐፍ አጠቃቀም።'
     }
   },
   'ch-9': {
     title: {
       en: 'Duty Paying Value (DPV) & Customs Valuation Methods',
       am: 'የቀረጥ መክፈያ ዋጋ (DPV) እና የጉምሩክ ዕቃ ዋጋ ማረጋገጫ ዘዴዎች'
+    },
+    description: {
+      en: 'Transaction value rules, freight and insurance uplift calculations, and customs price database valuation.',
+      am: 'የግብይት ዋጋ ማረጋገጫ ደንቦች፣ የትራንስፖርትና ኢንሹራንስ ድመራ ስሌት እና የጉምሩክ ዋጋ መረጃ ቋት አሰራር።'
     }
   },
   'ch-10': {
     title: {
       en: 'The 7-Tier Tax Cascade: Customs Duty, Excise, VAT & Surtax',
       am: 'ባለ 7 እርከን የታክስ ስሌት፦ የጉምሩክ ቀረጥ፣ ኤክሳይዝ፣ ቫትና ሱር ታክስ'
+    },
+    description: {
+      en: 'Calculating Customs Duty (0-35%), Excise (up to 100%), VAT (15%), Surtax (10%), and withholding deductions in cascade sequence.',
+      am: 'የጉምሩክ ቀረጥ (0-35%)፣ ኤክሳይዝ ታክስ፣ የተጨማሪ እሴት ታክስ (15%)፣ ሱር ታክስ (10%) እና ዊዝሆልዲንግ በተከታታይ እርከን የማስላት ዘዴ።'
     }
   },
   'ch-11': {
     title: {
       en: 'Duty-Free Privileges, Investment Incentives & Second-Schedule Schemes',
       am: 'ከቀረጥ ነፃ መብቶች፣ የኢንቨስትመንት ማበረታቻዎችና ልዩ ማዕቀፎች'
+    },
+    description: {
+      en: 'EIC investment incentives, second-schedule duty exemptions, manufacturer capital goods privileges, and post-entry monitoring.',
+      am: 'የኢንቨስትመንት ኮሚሽን ማበረታቻዎች፣ የሁለተኛው ሠንጠረዥ ቀረጥ ነፃ መብቶች፣ የፋብሪካ ካፒታል ዕቃዎችና ድህረ-ዕቃ ክትትል።'
     }
   },
   'ch-12': {
     title: {
       en: 'Maritime Logistics, Bill of Lading (B/L) & Containerization',
       am: 'የባህር ትራንስፖርት፣ የቦሌቶ (B/L) ሰነዶችና የኮንቴይነር አያያዝ'
+    },
+    description: {
+      en: 'Container specs (20ft/40ft), multimodal bill of lading, ESLSE shipping waivers, and seal integrity.',
+      am: 'የ20 እና 40 ጫማ ኮንቴይነሮች፣ የባህር ቦሌቶ (B/L) ሰነዶች፣ የESLSE የመርከብ ጭነት ፈቃድና የኮንቴይነር ማህተም ደህንነት።'
     }
   },
   'ch-13': {
     title: {
       en: 'Djibouti Corridor Operations, Customs Transit & Cross-Border Logistics',
       am: 'የጅቡቲ ኮሪደር አሰራር፣ የጉምሩክ ትራንዚትና የድንበር ማቋረጫ ሎጂስቲክስ'
+    },
+    description: {
+      en: 'Transit clearance at Doraleh Container Terminal (DCT), railway vs road freight, and Galafi border post operations.',
+      am: 'በዶራሌህ ተርሚናል የትራንዚት ዕቃ አወጣጥ፣ የባቡርና የጭነት መኪና ትራንስፖርት ንጽጽርና የጋላፊ ኬላ የጉምሩክ ቁጥጥር።'
     }
   },
   'ch-14': {
     title: {
       en: 'Dry Ports Infrastructure, Mojo Hub, Demurrage & Storage Optimization',
       am: 'የየብስ ወደቦች መሠረተ-ልማት፣ የሞጆ ማዕከልና የዲመሬጅ ወጪ ቅነሳ'
+    },
+    description: {
+      en: 'Mojo Dry Port operations, free demurrage storage windows (typically 7-15 days), avoiding detention fees, and inland clearance.',
+      am: 'የሞጆ ደረቅ ወደብ አሰራር፣ ከቅጣት ነፃ የማቆያ ቀናት (7-15 ቀናት)፣ የዲመሬጅ ወጪ መከላከያ እና የሀገር ውስጥ ጉምሩክ ክሊራንስ።'
     }
   },
   'ch-15': {
     title: {
       en: 'Export Licensing, ECX Warehouse Receipts & Quality Certification',
       am: 'የወጪ ንግድ ፈቃድ፣ የኢትዮጵያ ምርት ገበያ (ECX) ደረሰኞችና የጥራት ቁጥጥር'
+    },
+    description: {
+      en: 'Coffee and sesame export procedures, ECX trading rules, cupping inspection certificates, and phytosanitary clearance.',
+      am: 'የቡናና የቅባት እህሎች የወጪ ንግድ ደንቦች፣ የኢትዮጵያ ምርት ገበያ (ECX) አሰራር፣ የቅምሻና የጥራት ማረጋገጫ ሰነዶች።'
     }
   },
   'ch-16': {
     title: {
       en: 'NBE Forex Retention Accounts, Incentive Regimes & Post-Clearance Audits',
       am: 'የውጭ ምንዛሪ ማቆያ ሂሳብ (Retention Account)፣ ማበረታቻዎችና የድህረ-ዕቃ አወጣጥ ኦዲት'
+    },
+    description: {
+      en: 'Operating 50% NBE forex retention accounts, export incentive schemes, documentary retention, and post-clearance audits.',
+      am: 'የ50% የውጭ ምንዛሪ ማቆያ ሂሳብ (Retention Account) አጠቃቀም፣ የወጪ ንግድ ማበረታቻዎችና የድህረ-ጉምሩክ ኦዲት ዝግጅት።'
     }
   }
 };

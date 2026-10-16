@@ -24,7 +24,7 @@ interface Props {
 }
 
 export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { currentUser, submitSubscriptionPayment, isTelegramApp, telegramWebAppUser } = useApp();
+  const { currentUser, submitSubscriptionPayment, isTelegramApp, telegramWebAppUser, language } = useApp();
 
   const isGuest = currentUser.id === 'guest-student';
   const [telegramUsername, setTelegramUsername] = useState(
@@ -42,6 +42,7 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [screenshotData, setScreenshotData] = useState<string>(
     currentUser.paymentScreenshot || ''
   );
+  const [honeypot, setHoneypot] = useState('');
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -150,20 +151,40 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
     e.preventDefault();
     setErrorMessage('');
 
-    if (!telegramUsername.trim()) {
-      setErrorMessage('Please enter your Telegram account (e.g. @username).');
+    // Anti-Spam: Silent Honeypot Trap
+    if (honeypot.trim()) {
+      setIsSubmitting(false);
       return;
     }
-    if (!fullName.trim()) {
-      setErrorMessage('Please enter your full name.');
+
+    if (!telegramUsername.trim() || telegramUsername.trim().length < 3) {
+      setErrorMessage(
+        language === 'am'
+          ? 'እባክዎ ትክክለኛ የቴሌግራም መለያዎን ያስገቡ (ለምሳሌ፦ @username)።'
+          : 'Please enter your valid Telegram account (e.g. @username).'
+      );
+      return;
+    }
+    if (!fullName.trim() || fullName.trim().length < 3) {
+      setErrorMessage(
+        language === 'am' ? 'እባክዎ ሙሉ ስምዎን በትክክል ያስገቡ።' : 'Please enter your full legal name.'
+      );
       return;
     }
     if (!phoneNumber.trim()) {
-      setErrorMessage('Please enter your mobile phone number.');
+      setErrorMessage(
+        language === 'am'
+          ? 'እባክዎ የኢትዮጵያ ሞባይል ስልክ ቁጥርዎን ያስገቡ (09... ወይም 07...)።'
+          : 'Please enter your Ethiopian mobile phone number (09XXXXXXXX or 07XXXXXXXX).'
+      );
       return;
     }
     if (!screenshotData) {
-      setErrorMessage('Please upload the telebirr payment transfer screenshot.');
+      setErrorMessage(
+        language === 'am'
+          ? 'እባክዎ የቴሌብር ክፍያ ማስተላለፊያ ስክሪንሾት ማስረጃ ይጫኑ።'
+          : 'Please upload the telebirr payment transfer screenshot proof.'
+      );
       return;
     }
 
@@ -174,13 +195,22 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
         fullName: fullName.trim(),
         phoneNumber: phoneNumber.trim(),
         telebirrTxId: telebirrTxId.trim(),
-        paymentScreenshot: screenshotData
+        paymentScreenshot: screenshotData,
+        honeypot: honeypot.trim()
       });
       triggerTelegramHaptic('success');
       setSuccessSubmitted(true);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMessage('Failed to submit subscription request. Please try again.');
+      if (err instanceof Error) {
+        setErrorMessage(err.message);
+      } else {
+        setErrorMessage(
+          language === 'am'
+            ? 'የምዝገባ ጥያቄውን ማስተላለፍ አልተቻለም። እባክዎ መረጃዎን አረጋግጠው ድጋሚ ይሞክሩ።'
+            : 'Failed to submit subscription request. Please verify your details and try again.'
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -499,6 +529,18 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 </div>
               </div>
             )}
+
+            {/* Anti-Spam Bot Trap Field */}
+            <div className="hidden" aria-hidden="true" style={{ display: 'none' }}>
+              <input
+                type="text"
+                name="website_company_trap"
+                value={honeypot}
+                onChange={e => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               {/* Telegram Username */}
