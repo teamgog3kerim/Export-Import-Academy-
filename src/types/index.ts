@@ -30,7 +30,7 @@ export interface UserProfile {
 
 export interface AdminNotification {
   id: string;
-  type: 'subscription_request' | 'trial_login' | 'approved';
+  type: 'subscription_request' | 'trial_login' | 'approved' | 'new_student' | 'status_change';
   userId: string;
   telegramUsername: string;
   fullName: string;
@@ -41,6 +41,7 @@ export interface AdminNotification {
   hasScreenshot?: boolean;
   message: string;
   isTelegramWidgetUser?: boolean;
+  subscriptionStatus?: SubscriptionStatus;
 }
 
 export interface ResourceDocument {

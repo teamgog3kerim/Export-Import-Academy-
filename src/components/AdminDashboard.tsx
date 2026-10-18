@@ -50,6 +50,7 @@ export const AdminDashboard: React.FC = () => {
     adminGrantLifetime,
     adminResetToTrial,
     adminDeleteUser,
+    adminClearAllStudents,
     adminNotifications,
     markNotificationRead,
     clearAllNotifications,
@@ -66,6 +67,9 @@ export const AdminDashboard: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
+  const [showClearAllModal, setShowClearAllModal] = useState<boolean>(false);
+  const [clearNotice, setClearNotice] = useState<string | null>(null);
+  const [notifFilter, setNotifFilter] = useState<'all' | 'new_student' | 'subscription_request' | 'status_change'>('all');
 
   // New Student State
   const [newTelegram, setNewTelegram] = useState('');
@@ -181,7 +185,11 @@ export const AdminDashboard: React.FC = () => {
     if (!newTelegram.trim()) return;
 
     const formatted = formatTelegramHandle(newTelegram.trim());
-    loginWithTelegram(formatted, newName.trim(), newPhone.trim());
+    let cleanPhone = newPhone.trim().replace(/[\s\-\(\)\+]/g, '');
+    if (cleanPhone.startsWith('251')) cleanPhone = '0' + cleanPhone.slice(3);
+    else if ((cleanPhone.startsWith('9') || cleanPhone.startsWith('7')) && cleanPhone.length === 9) cleanPhone = '0' + cleanPhone;
+
+    loginWithTelegram(formatted, newName.trim(), cleanPhone);
 
     if (grantPaidDirectly) {
       setTimeout(() => {
@@ -206,6 +214,21 @@ export const AdminDashboard: React.FC = () => {
     setTimeout(() => setDeleteNotice(null), 4000);
   };
 
+  const handleClearAllStudents = () => {
+    const res = adminClearAllStudents();
+    setClearNotice(res.message);
+    setShowClearAllModal(false);
+    setTimeout(() => setClearNotice(null), 5000);
+  };
+
+  const filteredNotifications = adminNotifications.filter(n => {
+    if (notifFilter === 'all') return true;
+    if (notifFilter === 'new_student') return n.type === 'new_student' || n.type === 'trial_login';
+    if (notifFilter === 'subscription_request') return n.type === 'subscription_request';
+    if (notifFilter === 'status_change') return n.type === 'status_change' || n.type === 'approved';
+    return true;
+  });
+
   return (
     <div className="space-y-8">
       {/* Delete Feedback Toast */}
@@ -216,6 +239,19 @@ export const AdminDashboard: React.FC = () => {
             <span>{deleteNotice}</span>
           </div>
           <button onClick={() => setDeleteNotice(null)} className="text-emerald-600 hover:text-emerald-800">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Clear Records Feedback Toast */}
+      {clearNotice && (
+        <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 rounded-2xl text-xs text-rose-800 dark:text-rose-200 font-semibold flex items-center justify-between shadow-xs animate-fade-in">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>{clearNotice}</span>
+          </div>
+          <button onClick={() => setClearNotice(null)} className="text-rose-600 hover:text-rose-800">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -238,7 +274,16 @@ export const AdminDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setShowClearAllModal(true)}
+            className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+            title="Clear all past student records and start fresh tracking from now"
+          >
+            <Trash2 className="w-4 h-4 text-rose-500" />
+            <span>Clear All Student Records</span>
+          </button>
+
           <button
             onClick={() => setShowAddModal(true)}
             className="px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs"
@@ -362,6 +407,165 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Live Admin Alerts & Real-Time Student Activity Feed */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0">
+              <Bell className="w-5 h-5" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-serif-title font-bold text-base sm:text-lg text-neutral-900 dark:text-neutral-50">
+                  Live Telegram Student Activity & Subscription Notifications
+                </h2>
+                {adminNotifications.filter(n => !n.read).length > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-600 text-white animate-pulse">
+                    {adminNotifications.filter(n => !n.read).length} New
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Real-time tracking of new student accounts enrolled via Telegram and their live subscription status changes.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {adminNotifications.length > 0 && (
+              <button
+                onClick={clearAllNotifications}
+                className="px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-xs font-semibold transition"
+              >
+                Clear Log
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          {[
+            { id: 'all', label: `All Alerts (${adminNotifications.length})` },
+            { id: 'new_student', label: `New Telegram Students (${adminNotifications.filter(n => n.type === 'new_student' || n.type === 'trial_login').length})` },
+            { id: 'subscription_request', label: `Payment Requests (${adminNotifications.filter(n => n.type === 'subscription_request').length})` },
+            { id: 'status_change', label: `Status Changes (${adminNotifications.filter(n => n.type === 'status_change' || n.type === 'approved').length})` }
+          ].map(f => (
+            <button
+              key={f.id}
+              onClick={() => setNotifFilter(f.id as any)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
+                notifFilter === f.id
+                  ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 font-bold shadow-2xs'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-750'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Notification Stream */}
+        <div className="space-y-2 max-h-72 overflow-y-auto academy-scrollbar pt-1">
+          {filteredNotifications.length === 0 ? (
+            <div className="p-6 rounded-2xl bg-neutral-50 dark:bg-neutral-850/50 border border-dashed border-neutral-200 dark:border-neutral-800 text-center space-y-1.5">
+              <Sparkles className="w-5 h-5 text-amber-500 mx-auto opacity-70" />
+              <p className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                Ready for incoming Telegram student activity
+              </p>
+              <p className="text-[11px] text-neutral-400 max-w-md mx-auto">
+                All old student records are cleared. As new students log in via Telegram (@Eximmanlearnbot, widget, or WebApp), their records and subscription status will appear here in real-time.
+              </p>
+            </div>
+          ) : (
+            filteredNotifications.slice(0, 30).map(n => {
+              const matchedUser = users.find(u => u.id === n.userId);
+              return (
+                <div
+                  key={n.id}
+                  onClick={() => markNotificationRead(n.id)}
+                  className={`p-3.5 rounded-2xl border text-xs transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer ${
+                    !n.read
+                      ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/80 font-medium'
+                      : 'bg-white dark:bg-neutral-850/60 border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className={`flex h-7 w-7 items-center justify-center rounded-xl shrink-0 mt-0.5 text-xs font-bold ${
+                      n.type === 'subscription_request'
+                        ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                        : n.type === 'approved'
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
+                    }`}>
+                      {n.type === 'subscription_request' ? '💳' : n.type === 'approved' ? '✓' : '👤'}
+                    </span>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-bold text-neutral-900 dark:text-neutral-100">{n.fullName}</span>
+                        <span className="font-mono text-amber-700 dark:text-amber-400 font-semibold">{n.telegramUsername}</span>
+                        {n.subscriptionStatus && (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            n.subscriptionStatus === 'active_paid'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                              : n.subscriptionStatus === 'pending_approval'
+                              ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 animate-pulse'
+                              : n.subscriptionStatus === 'expired'
+                              ? 'bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400'
+                              : 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                          }`}>
+                            {n.subscriptionStatus.replace('_', ' ')}
+                          </span>
+                        )}
+                        {n.isTelegramWidgetUser && (
+                          <span className="text-[10px] text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.5 rounded border border-sky-200 dark:border-sky-800">
+                            Telegram Widget
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">
+                        {n.message}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 text-[10px] text-neutral-400 font-mono">
+                    <span>
+                      {new Date(n.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}{' '}
+                      {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {n.type === 'subscription_request' && (
+                      <div className="flex items-center gap-1.5">
+                        {matchedUser?.paymentScreenshot && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedProofUser(matchedUser);
+                            }}
+                            className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-bold text-[10px] transition"
+                          >
+                            Proof
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            adminApproveUser(n.userId, 30);
+                          }}
+                          className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-[10px] shadow-2xs transition"
+                        >
+                          Approve 30d
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
@@ -1231,17 +1435,33 @@ export const AdminDashboard: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-neutral-700 dark:text-neutral-300">
-                  Mobile Number
-                </label>
+              <div className="space-y-1.5 p-3 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-200/80 dark:border-amber-800/60 text-xs">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-neutral-800 dark:text-neutral-200">
+                    Mobile Number
+                  </label>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                    Without +251 (09... or 07...)
+                  </span>
+                </div>
                 <input
                   type="tel"
                   value={newPhone}
-                  onChange={e => setNewPhone(e.target.value)}
-                  placeholder="09 11 22 33 44"
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl font-mono"
+                  onChange={e => {
+                    let cleaned = e.target.value.replace(/[^\d+]/g, '');
+                    if (cleaned.startsWith('+251')) cleaned = '0' + cleaned.slice(4);
+                    else if (cleaned.startsWith('251') && cleaned.length >= 4) cleaned = '0' + cleaned.slice(3);
+                    else if (cleaned.startsWith('+')) cleaned = cleaned.replace(/^\+/, '');
+                    if (cleaned.length > 10) cleaned = cleaned.slice(0, 10);
+                    setNewPhone(cleaned);
+                  }}
+                  placeholder="09XXXXXXXX or 07XXXXXXXX"
+                  maxLength={10}
+                  className="w-full px-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl font-mono text-xs font-semibold"
                 />
+                <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                  Must start with 09... or 07... (10 digits without +251).
+                </p>
               </div>
 
               <div className="pt-1">
@@ -1323,6 +1543,62 @@ export const AdminDashboard: React.FC = () => {
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Yes, Delete User</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear All Students Confirmation Modal */}
+      {showClearAllModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+          <div className="bg-white dark:bg-neutral-900 border border-rose-300 dark:border-rose-800 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-scale-up">
+            <div className="flex items-center gap-3 text-rose-600">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </span>
+              <div>
+                <h3 className="font-serif-title font-bold text-xl text-neutral-900 dark:text-neutral-50">
+                  Clear All Student Records?
+                </h3>
+                <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold">
+                  Start fresh records for new Telegram logins from now
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-900 dark:text-rose-200 space-y-2">
+              <p className="font-bold flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>Notice for Administrator (@EximmanAbdIstad):</span>
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-[11px] leading-relaxed text-rose-800 dark:text-rose-300">
+                <li>All current students ({nonAdminUsers.length} records) will be purged from the admin database.</li>
+                <li>Your administrator account (@EximmanAbdIstad) is protected and will remain untouched.</li>
+                <li>Starting immediately, every student who logs in using their Telegram account will be registered as a brand-new record.</li>
+                <li>You will be instantly notified with sound chimes and alerts for every new user and their subscription status.</li>
+              </ul>
+            </div>
+
+            <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              Confirm below to clear all student records and initialize fresh tracking.
+            </p>
+
+            <div className="pt-2 flex items-center justify-end gap-3 text-xs">
+              <button
+                type="button"
+                onClick={() => setShowClearAllModal(false)}
+                className="px-4 py-2.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleClearAllStudents}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition shadow-md flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Yes, Clear All Student Records</span>
               </button>
             </div>
           </div>

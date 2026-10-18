@@ -50,6 +50,21 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
     currentUser.subscriptionStatus === 'pending_approval'
   );
 
+  const handlePhoneChange = (val: string) => {
+    let cleaned = val.replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('+251')) {
+      cleaned = '0' + cleaned.slice(4);
+    } else if (cleaned.startsWith('251') && cleaned.length >= 4) {
+      cleaned = '0' + cleaned.slice(3);
+    } else if (cleaned.startsWith('+')) {
+      cleaned = cleaned.replace(/^\+/, '');
+    }
+    if (cleaned.length > 10) {
+      cleaned = cleaned.slice(0, 10);
+    }
+    setPhoneNumber(cleaned);
+  };
+
   useEffect(() => {
     if (isOpen) {
       if (currentUser.subscriptionStatus === 'rejected') {
@@ -171,14 +186,32 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
       );
       return;
     }
-    if (!phoneNumber.trim()) {
+    const rawDigits = phoneNumber.replace(/[\s\-\(\)\+]/g, '');
+    let normPhone = rawDigits;
+    if (normPhone.startsWith('251')) {
+      normPhone = '0' + normPhone.slice(3);
+    } else if ((normPhone.startsWith('9') || normPhone.startsWith('7')) && normPhone.length === 9) {
+      normPhone = '0' + normPhone;
+    }
+
+    if (!normPhone) {
       setErrorMessage(
         language === 'am'
-          ? 'እባክዎ የኢትዮጵያ ሞባይል ስልክ ቁጥርዎን ያስገቡ (09... ወይም 07...)።'
-          : 'Please enter your Ethiopian mobile phone number (09XXXXXXXX or 07XXXXXXXX).'
+          ? 'እባክዎ የኢትዮጵያ ሞባይል ስልክ ቁጥርዎን ያስገቡ (በ 09... ወይም 07... የሚጀምር)።'
+          : 'Please enter your Ethiopian mobile phone number starting with 09... or 07...'
       );
       return;
     }
+
+    if (!/^(09|07)\d{8}$/.test(normPhone)) {
+      setErrorMessage(
+        language === 'am'
+          ? 'የስልክ ቁጥር ያለ +251 የአገር መለያ በ 09... ወይም 07... መመዝገብ አለበት (10 አሃዝ፦ ለምሳሌ 0911223344 ወይም 0711223344)።'
+          : 'Phone number must be recorded without country opening (+251), starting with 09... or 07... (10 digits: e.g. 09XXXXXXXX or 07XXXXXXXX).'
+      );
+      return;
+    }
+
     if (!screenshotData) {
       setErrorMessage(
         language === 'am'
@@ -193,7 +226,7 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
       submitSubscriptionPayment({
         telegramUsername: telegramUsername.trim(),
         fullName: fullName.trim(),
-        phoneNumber: phoneNumber.trim(),
+        phoneNumber: normPhone,
         telebirrTxId: telebirrTxId.trim(),
         paymentScreenshot: screenshotData,
         honeypot: honeypot.trim()
@@ -576,19 +609,48 @@ export const SubscriptionModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* Mobile Number */}
-              <div className="space-y-1">
-                <label className="font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
-                  <Smartphone className="h-3.5 w-3.5 text-neutral-500" />
-                  <span>Mobile Phone Number *</span>
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={phoneNumber}
-                  onChange={e => setPhoneNumber(e.target.value)}
-                  placeholder="09 11 22 33 44"
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs font-mono"
-                />
+              <div className="space-y-1.5 p-3 rounded-2xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-200/80 dark:border-amber-800/60 shadow-2xs transition-all">
+                <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                  <label className="font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 text-xs">
+                    <Smartphone className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>{language === 'am' ? 'የሞባይል ስልክ ቁጥር *' : 'Mobile Phone Number *'}</span>
+                  </label>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse" />
+                    <span>{language === 'am' ? 'ያለ +251 (በ 09... ወይም 07...)' : 'Without +251 (09... or 07...)'}</span>
+                  </span>
+                </div>
+
+                <div className="relative flex items-center">
+                  <div className="absolute left-3 flex items-center pointer-events-none text-neutral-400 dark:text-neutral-500 font-mono text-xs font-bold select-none border-r border-neutral-200 dark:border-neutral-700 pr-2">
+                    ET
+                  </div>
+                  <input
+                    type="tel"
+                    required
+                    value={phoneNumber}
+                    onChange={e => handlePhoneChange(e.target.value)}
+                    placeholder="09XXXXXXXX or 07XXXXXXXX"
+                    maxLength={10}
+                    className="w-full pl-12 pr-14 py-2.5 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs font-mono tracking-wider font-bold shadow-2xs"
+                  />
+                  <span className="absolute right-3 text-[10px] font-mono font-bold text-neutral-400 dark:text-neutral-500">
+                    {phoneNumber.length}/10
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] text-neutral-500 dark:text-neutral-400 pt-0.5">
+                  <span>
+                    {language === 'am'
+                      ? 'ስልክ ቁጥር ያለ +251 በ 09... ወይም 07... ይጀምሩ'
+                      : 'Record without +251, starting with 09... or 07...'}
+                  </span>
+                  {/^(09|07)\d{8}$/.test(phoneNumber) && (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5">
+                      ✓ {language === 'am' ? 'ትክክለኛ' : 'Valid'}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Telebirr Tx ID */}

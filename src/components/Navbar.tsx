@@ -87,6 +87,7 @@ export const Navbar: React.FC = () => {
     currentUser,
     users,
     adminNotifications,
+    markNotificationRead,
     adminApproveUser,
     loginWithTelegram,
     logout,
@@ -135,8 +136,12 @@ export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [adminNotifsOpen, setAdminNotifsOpen] = useState(false);
+  const [adminNotifTab, setAdminNotifTab] = useState<'alerts' | 'pending'>('alerts');
   const userMenuRef = useRef<HTMLDivElement>(null);
   const adminNotifsRef = useRef<HTMLDivElement>(null);
+
+  const unreadNotifs = adminNotifications.filter(n => !n.read);
+  const totalAdminAlertCount = Math.max(pendingApprovalsCount, unreadNotifs.length);
 
   useEffect(() => {
     if (!userDropdownOpen && !adminNotifsOpen) return;
@@ -379,15 +384,15 @@ export const Navbar: React.FC = () => {
                   aria-label="Admin Notifications"
                   className="relative flex h-8 w-8 xs:h-9 xs:w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-850 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shadow-2xs"
                   title={
-                    pendingApprovalsCount > 0
-                      ? `🚨 ${pendingApprovalsCount} Instant Subscription Request(s) Awaiting Approval!`
+                    totalAdminAlertCount > 0
+                      ? `🚨 ${totalAdminAlertCount} Student Activity Alert(s)!`
                       : 'Admin Notifications'
                   }
                 >
-                  <Bell className={`h-4 w-4 ${pendingApprovalsCount > 0 ? 'text-rose-600 animate-bounce' : 'text-neutral-500'}`} />
-                  {pendingApprovalsCount > 0 && (
+                  <Bell className={`h-4 w-4 ${totalAdminAlertCount > 0 ? 'text-amber-600 animate-bounce' : 'text-neutral-500'}`} />
+                  {totalAdminAlertCount > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-600 text-white text-[10px] font-extrabold shadow-xs animate-pulse">
-                      {pendingApprovalsCount}
+                      {totalAdminAlertCount}
                     </span>
                   )}
                 </button>
@@ -395,13 +400,13 @@ export const Navbar: React.FC = () => {
                 {adminNotifsOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 top-full mt-2 w-[min(380px,calc(100vw-24px))] rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-2xl z-50 animate-scale-up"
+                    className="absolute right-0 top-full mt-2 w-[min(400px,calc(100vw-24px))] rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 shadow-2xl z-50 animate-scale-up"
                   >
-                    <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-2.5 px-1">
+                    <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-2 px-1">
                       <div className="flex items-center gap-1.5">
                         <Bell className="h-4 w-4 text-amber-600" />
                         <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                          Subscription Requests ({pendingApprovalsCount})
+                          Admin Student Alerts ({adminNotifications.length})
                         </h4>
                       </div>
                       <button
@@ -411,63 +416,137 @@ export const Navbar: React.FC = () => {
                         }}
                         className="text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:underline"
                       >
-                        Open Dashboard →
+                        Admin Dashboard →
+                      </button>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex items-center gap-1 pt-2 border-b border-neutral-100 dark:border-neutral-800 pb-2">
+                      <button
+                        onClick={() => setAdminNotifTab('alerts')}
+                        className={`flex-1 py-1 text-[11px] font-bold rounded-lg transition ${
+                          adminNotifTab === 'alerts'
+                            ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                        }`}
+                      >
+                        Telegram Activity ({adminNotifications.length})
+                      </button>
+                      <button
+                        onClick={() => setAdminNotifTab('pending')}
+                        className={`flex-1 py-1 text-[11px] font-bold rounded-lg transition ${
+                          adminNotifTab === 'pending'
+                            ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                        }`}
+                      >
+                        Pending ({pendingApprovalsCount})
                       </button>
                     </div>
 
                     <div className="py-2 space-y-2 max-h-72 overflow-y-auto academy-scrollbar">
-                      {pendingRequests.length === 0 ? (
-                        <div className="text-center py-4 px-2 text-xs text-neutral-500 dark:text-neutral-400">
-                          <Check className="h-5 w-5 text-emerald-500 mx-auto mb-1 opacity-70" />
-                          <span>No pending subscription requests. All students are approved!</span>
-                        </div>
-                      ) : (
-                        pendingRequests.map(req => (
-                          <div
-                            key={req.id}
-                            className="p-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-xs space-y-1.5"
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <span className="font-bold text-neutral-900 dark:text-neutral-100 block">
-                                  {req.fullName}
-                                </span>
-                                <span className="font-mono text-[11px] text-[#176b60] dark:text-[#8bc9b8]">
-                                  {req.telegramUsername}
+                      {adminNotifTab === 'alerts' ? (
+                        adminNotifications.length === 0 ? (
+                          <div className="text-center py-6 px-2 text-xs text-neutral-500 dark:text-neutral-400">
+                            <Check className="h-5 w-5 text-emerald-500 mx-auto mb-1 opacity-70" />
+                            <span>No alerts recorded yet. Real-time notifications will appear as students log in via Telegram.</span>
+                          </div>
+                        ) : (
+                          adminNotifications.slice(0, 15).map(n => (
+                            <div
+                              key={n.id}
+                              onClick={() => markNotificationRead(n.id)}
+                              className={`p-2.5 rounded-xl border text-xs space-y-1 transition cursor-pointer ${
+                                !n.read
+                                  ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800 font-medium'
+                                  : 'bg-neutral-50/60 dark:bg-neutral-850/60 border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-neutral-900 dark:text-neutral-100">{n.fullName}</span>
+                                  <span className="font-mono text-[11px] text-amber-700 dark:text-amber-400 font-semibold">{n.telegramUsername}</span>
+                                  {n.subscriptionStatus && (
+                                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200">
+                                      {n.subscriptionStatus.replace('_', ' ')}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-neutral-400 font-mono shrink-0">
+                                  {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               </div>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-600 text-white shrink-0">
-                                3,900 ETB
-                              </span>
+                              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 leading-snug">{n.message}</p>
+                              {n.type === 'subscription_request' && (
+                                <div className="pt-1 flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      adminApproveUser(n.userId, 30);
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10px] shadow-2xs transition"
+                                  >
+                                    Approve 30 Days (Instant)
+                                  </button>
+                                </div>
+                              )}
                             </div>
-
-                            {req.telebirrTxId && (
-                              <p className="font-mono text-[10px] text-neutral-500 truncate">
-                                TxID: {req.telebirrTxId}
-                              </p>
-                            )}
-
-                            <div className="pt-1 flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => {
-                                  navigate('admin');
-                                  setAdminNotifsOpen(false);
-                                }}
-                                className="px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 text-[10px] font-medium"
-                              >
-                                View Details
-                              </button>
-                              <button
-                                onClick={() => {
-                                  adminApproveUser(req.id, 30);
-                                }}
-                                className="px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10px] shadow-2xs transition"
-                              >
-                                Approve 30 Days (Instant Access)
-                              </button>
-                            </div>
+                          ))
+                        )
+                      ) : (
+                        pendingRequests.length === 0 ? (
+                          <div className="text-center py-6 px-2 text-xs text-neutral-500 dark:text-neutral-400">
+                            <Check className="h-5 w-5 text-emerald-500 mx-auto mb-1 opacity-70" />
+                            <span>No pending subscription requests. All students are approved!</span>
                           </div>
-                        ))
+                        ) : (
+                          pendingRequests.map(req => (
+                            <div
+                              key={req.id}
+                              className="p-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-xs space-y-1.5"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <span className="font-bold text-neutral-900 dark:text-neutral-100 block">
+                                    {req.fullName}
+                                  </span>
+                                  <span className="font-mono text-[11px] text-[#176b60] dark:text-[#8bc9b8]">
+                                    {req.telegramUsername}
+                                  </span>
+                                </div>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-600 text-white shrink-0">
+                                  3,900 ETB
+                                </span>
+                              </div>
+
+                              {req.telebirrTxId && (
+                                <p className="font-mono text-[10px] text-neutral-500 truncate">
+                                  TxID: {req.telebirrTxId}
+                                </p>
+                              )}
+
+                              <div className="pt-1 flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    navigate('admin');
+                                    setAdminNotifsOpen(false);
+                                  }}
+                                  className="px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 text-[10px] font-medium"
+                                >
+                                  View Details
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    adminApproveUser(req.id, 30);
+                                  }}
+                                  className="px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10px] shadow-2xs transition"
+                                >
+                                  Approve 30 Days (Instant Access)
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )
                       )}
                     </div>
                   </div>

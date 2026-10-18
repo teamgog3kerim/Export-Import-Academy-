@@ -46,6 +46,7 @@ interface AppContextType {
   adminGrantLifetime: (userId: string) => void;
   adminResetToTrial: (userId: string) => void;
   adminDeleteUser: (userId: string) => { success: boolean; message: string };
+  adminClearAllStudents: () => { success: boolean; message: string };
   adminNotifications: AdminNotification[];
   markNotificationRead: (id: string) => void;
   clearAllNotifications: () => void;
@@ -93,13 +94,13 @@ interface AppContextType {
   resetCoursesAndQuizzes: () => void;
 }
 
-const STORAGE_KEY_USERS = 'ethio_impex_users_v6';
-const STORAGE_KEY_CURRENT_USER = 'ethio_impex_curr_user_v6';
+const STORAGE_KEY_USERS = 'ethio_impex_users_v10';
+const STORAGE_KEY_CURRENT_USER = 'ethio_impex_curr_user_v10';
 const STORAGE_KEY_THEME = 'ethio_impex_theme';
 const STORAGE_KEY_LANGUAGE = 'ethio_impex_lang_v1';
 const STORAGE_KEY_QUIZ_SCORES = 'ethio_impex_quiz_scores_v6';
 const STORAGE_KEY_USER_QUIZZES = 'ethio_impex_user_quizzes_v6';
-const STORAGE_KEY_ADMIN_NOTIFS = 'ethio_impex_admin_notifs_v6';
+const STORAGE_KEY_ADMIN_NOTIFS = 'ethio_impex_admin_notifs_v10';
 
 type QuizScores = Record<string, { score: number; maxScore: number; date: string }>;
 const ALL_CHAPTERS = COURSE_MODULES.flatMap(module => module.chapters);
@@ -698,14 +699,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       throw new Error('Please enter a valid full name (minimum 3 characters, no links or HTML).');
     }
 
-    // Anti-Spam: Ethiopian phone number format verification
-    const cleanDigits = data.phoneNumber.replace(/[\s\-\(\)\+]/g, '');
-    const isEthPhone = /^(?:251)?[79]\d{8}$/.test(cleanDigits);
-    const isRepetitive = /^(\d)\1+$/.test(cleanDigits);
-    const isSequential = ['0912345678', '0987654321', '0712345678', '0787654321'].includes(cleanDigits);
-    const isDummy = ['0900000000', '0911111111', '0999999999', '0922222222', '0700000000', '0711111111'].includes(cleanDigits);
-    if (!isEthPhone || isRepetitive || isSequential || isDummy || cleanDigits.length < 9) {
-      throw new Error('Please enter a valid Ethiopian mobile phone number (09XXXXXXXX or 07XXXXXXXX).');
+    // Phone Number Normalization: Must be without country opening (+251), starting strictly with 09... or 07...
+    let cleanPhone = data.phoneNumber.replace(/[\s\-\(\)\+]/g, '');
+    if (cleanPhone.startsWith('251')) {
+      cleanPhone = '0' + cleanPhone.slice(3);
+    } else if ((cleanPhone.startsWith('9') || cleanPhone.startsWith('7')) && cleanPhone.length === 9) {
+      cleanPhone = '0' + cleanPhone;
+    }
+
+    const isEthPhone = /^(09|07)\d{8}$/.test(cleanPhone);
+    const isRepetitive = /^(\d)\1+$/.test(cleanPhone);
+    const isSequential = ['0912345678', '0987654321', '0712345678', '0787654321'].includes(cleanPhone);
+    const isDummy = ['0900000000', '0911111111', '0999999999', '0922222222', '0700000000', '0711111111'].includes(cleanPhone);
+    if (!isEthPhone || isRepetitive || isSequential || isDummy) {
+      throw new Error('Please enter a valid Ethiopian mobile phone number starting with 09... or 07... (10 digits without +251, e.g. 09XXXXXXXX or 07XXXXXXXX).');
     }
 
     // Anti-Spam: Telegram handle validation
@@ -771,7 +778,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ...target,
           fullName: data.fullName.trim() || target.fullName,
           telegramUsername: formattedTelegram,
-          phoneNumber: data.phoneNumber.trim() || target.phoneNumber,
+          phoneNumber: cleanPhone || target.phoneNumber,
           subscriptionStatus: 'pending_approval',
           isTelegramWidgetUser: wasWidgetUser,
           telebirrTxId: data.telebirrTxId?.trim() || target.telebirrTxId,
@@ -791,7 +798,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           id: `user-${Date.now()}`,
           fullName: data.fullName.trim() || formattedTelegram,
           telegramUsername: formattedTelegram,
-          phoneNumber: data.phoneNumber.trim(),
+          phoneNumber: cleanPhone,
           role: 'user',
           subscriptionStatus: 'pending_approval',
           isTelegramWidgetUser: isFromWidget,
@@ -864,6 +871,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const now = new Date().toISOString();
+    let isNew = false;
+    let createdUser: UserProfile | null = null;
+    let matchedUser: UserProfile | null = null;
+
+    let cleanLoginPhone = phoneNumber ? phoneNumber.replace(/[\s\-\(\)\+]/g, '') : '';
+    if (cleanLoginPhone.startsWith('251')) {
+      cleanLoginPhone = '0' + cleanLoginPhone.slice(3);
+    } else if ((cleanLoginPhone.startsWith('9') || cleanLoginPhone.startsWith('7')) && cleanLoginPhone.length === 9) {
+      cleanLoginPhone = '0' + cleanLoginPhone;
+    }
 
     setUsers(prev => {
       const matchIdx = prev.findIndex(
@@ -875,19 +892,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         copy[matchIdx] = {
           ...existing,
           fullName: fullName?.trim() || existing.fullName || formatted,
-          phoneNumber: phoneNumber?.trim() || existing.phoneNumber || '',
+          phoneNumber: cleanLoginPhone || existing.phoneNumber || '',
           lastLoginAt: now
         };
+        matchedUser = copy[matchIdx];
         setCurrentUserId(existing.id);
         saveLocal(STORAGE_KEY_USERS, JSON.stringify(copy));
         return copy;
       }
 
+      isNew = true;
       const newUser: UserProfile = {
-        id: `user-${Date.now()}`,
+        id: `tg-${Date.now()}`,
         fullName: fullName?.trim() || formatted,
         telegramUsername: formatted,
-        phoneNumber: phoneNumber?.trim() || '',
+        phoneNumber: cleanLoginPhone || '',
         role: 'user',
         subscriptionStatus: 'free_trial',
         registeredAt: now,
@@ -897,11 +916,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         paymentAmount: 0,
         completedChapters: []
       };
+      createdUser = newUser;
       setCurrentUserId(newUser.id);
       const updated = [...prev, newUser];
       saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
       return updated;
     });
+
+    if (isNew && createdUser) {
+      const u = createdUser as UserProfile;
+      const notif: AdminNotification = {
+        id: `notif-tg-${Date.now()}`,
+        type: 'new_student',
+        userId: u.id,
+        telegramUsername: formatted,
+        fullName: u.fullName,
+        amount: 0,
+        timestamp: now,
+        read: false,
+        subscriptionStatus: 'free_trial',
+        message: `🎉 New Student Record: ${u.fullName} (${formatted}) logged in via Telegram. Subscription Status: Free Trial`
+      };
+      setAdminNotifications(prev => [notif, ...prev]);
+      playAdminChime();
+      window.dispatchEvent(new CustomEvent('academy-new-student-record', { detail: { user: u } }));
+    } else if (matchedUser) {
+      const m = matchedUser as UserProfile;
+      const notif: AdminNotification = {
+        id: `notif-login-${Date.now()}`,
+        type: 'status_change',
+        userId: m.id,
+        telegramUsername: m.telegramUsername,
+        fullName: m.fullName,
+        amount: m.paymentAmount || 0,
+        timestamp: now,
+        read: false,
+        subscriptionStatus: m.subscriptionStatus,
+        message: `👤 Student Login: ${m.fullName} (${m.telegramUsername}) logged in with Telegram. Subscription Status: ${
+          m.subscriptionStatus === 'active_paid'
+            ? 'Active Paid'
+            : m.subscriptionStatus === 'pending_approval'
+            ? 'Pending 3,900 ETB Approval'
+            : m.subscriptionStatus === 'expired'
+            ? 'Expired'
+            : 'Free Trial'
+        }`
+      };
+      setAdminNotifications(prev => [notif, ...prev.slice(0, 49)]);
+    }
   };
 
   const loginWithTelegramWidget = (widgetUser: TelegramWidgetUser) => {
@@ -983,7 +1045,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isNewRegistration) {
       const notif: AdminNotification = {
         id: `notif-tg-${Date.now()}`,
-        type: 'trial_login',
+        type: 'new_student',
         userId: targetUserId,
         telegramUsername: formatted,
         fullName,
@@ -991,10 +1053,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         timestamp: now,
         read: false,
         isTelegramWidgetUser: true,
-        message: `New student auto-recorded via Telegram Login Widget: ${fullName} (${formatted}) on Free Trial`
+        subscriptionStatus: 'free_trial',
+        message: `🎉 New Student Record: ${fullName} (${formatted}) registered via Telegram Widget. Subscription Status: Free Trial`
       };
       setAdminNotifications(prev => [notif, ...prev]);
-      window.dispatchEvent(new CustomEvent('academy-user-update', { detail: { userId: targetUserId } }));
+      playAdminChime();
+      window.dispatchEvent(new CustomEvent('academy-new-student-record', { detail: { userId: targetUserId, username: formatted } }));
     } else if (userSubscriptionStatus === 'pending_approval') {
       const notif: AdminNotification = {
         id: `notif-tg-pending-${Date.now()}`,
@@ -1096,9 +1160,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     // Mark notifications for this user as approved/read
-    setAdminNotifications(prev =>
-      prev.map(n => (n.userId === userId ? { ...n, read: true } : n))
-    );
+    const target = users.find(u => u.id === userId);
+    if (target) {
+      const notif: AdminNotification = {
+        id: `notif-appr-${Date.now()}`,
+        type: 'approved',
+        userId,
+        telegramUsername: target.telegramUsername,
+        fullName: target.fullName,
+        amount: 3900,
+        timestamp: now.toISOString(),
+        read: true,
+        subscriptionStatus: 'active_paid',
+        message: `✅ Subscription Approved: ${target.fullName} (${target.telegramUsername}) granted ${days} days access. Status: Active Paid`
+      };
+      setAdminNotifications(prev => [notif, ...prev.map(n => (n.userId === userId ? { ...n, read: true } : n))]);
+    } else {
+      setAdminNotifications(prev =>
+        prev.map(n => (n.userId === userId ? { ...n, read: true } : n))
+      );
+    }
 
     // Broadcast instant approval so user gets immediate access in current or other sessions
     window.dispatchEvent(
@@ -1152,6 +1233,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
+  const adminClearAllStudents = () => {
+    if (!isAdmin) {
+      return { success: false, message: 'Unauthorized: Only administrator can clear student records.' };
+    }
+
+    setUsers([ADMIN_USER]);
+    saveLocal(STORAGE_KEY_USERS, JSON.stringify([ADMIN_USER]));
+
+    // If current preview session was a student, switch to admin or guest
+    if (currentUserId !== ADMIN_USER.id) {
+      setCurrentUserId(ADMIN_USER.id);
+    }
+
+    // Reset user quiz progress for cleared students
+    setUserQuizScores({});
+    saveLocal(STORAGE_KEY_USER_QUIZZES, JSON.stringify({}));
+
+    // Reset notifications with an announcement of fresh tracking
+    const now = new Date().toISOString();
+    const notif: AdminNotification = {
+      id: `notif-cleared-${Date.now()}`,
+      type: 'status_change',
+      userId: ADMIN_USER.id,
+      telegramUsername: ADMIN_TELEGRAM_HANDLE,
+      fullName: 'System Administrator',
+      amount: 0,
+      timestamp: now,
+      read: false,
+      subscriptionStatus: 'active_paid',
+      message: '🧹 All previous student records cleared. Fresh tracking initiated for all students logging in via Telegram.'
+    };
+    setAdminNotifications([notif]);
+    playAdminChime();
+
+    window.dispatchEvent(new Event('academy-students-cleared'));
+
+    return {
+      success: true,
+      message: 'All student records have been cleared from admin. New records will start automatically as students log in using their Telegram account.'
+    };
+  };
+
   const simulateTrialDays = (days: number) => {
     const simulatedDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
     setUsers(prev => {
@@ -1190,6 +1313,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
       return updated;
     });
+
+    const target = users.find(u => u.id === userId);
+    if (target) {
+      const notif: AdminNotification = {
+        id: `notif-life-${Date.now()}`,
+        type: 'status_change',
+        userId,
+        telegramUsername: target.telegramUsername,
+        fullName: target.fullName,
+        amount: 3900,
+        timestamp: now.toISOString(),
+        read: true,
+        subscriptionStatus: 'active_paid',
+        message: `⭐ Lifetime Access Granted: ${target.fullName} (${target.telegramUsername}). Status: Active Lifetime`
+      };
+      setAdminNotifications(prev => [notif, ...prev]);
+    }
   };
 
   const adminResetToTrial = (userId: string) => {
@@ -1209,6 +1349,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
       return updated;
     });
+
+    const target = users.find(u => u.id === userId);
+    if (target) {
+      const notif: AdminNotification = {
+        id: `notif-trial-${Date.now()}`,
+        type: 'status_change',
+        userId,
+        telegramUsername: target.telegramUsername,
+        fullName: target.fullName,
+        amount: 0,
+        timestamp: new Date().toISOString(),
+        read: false,
+        subscriptionStatus: 'free_trial',
+        message: `🔄 Subscription Reset: ${target.fullName} (${target.telegramUsername}) reset to Free Trial.`
+      };
+      setAdminNotifications(prev => [notif, ...prev]);
+    }
   };
 
   const adminRejectUser = (userId: string, reason?: string) => {
@@ -1233,10 +1390,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return updated;
     });
 
-    // Mark notifications for this user as handled
-    setAdminNotifications(prev =>
-      prev.map(n => (n.userId === userId ? { ...n, read: true } : n))
-    );
+    // Mark notifications for this user as handled & post rejection status notification
+    const target = users.find(u => u.id === userId);
+    if (target) {
+      const notif: AdminNotification = {
+        id: `notif-rej-${Date.now()}`,
+        type: 'status_change',
+        userId,
+        telegramUsername: target.telegramUsername,
+        fullName: target.fullName,
+        amount: 0,
+        timestamp: new Date().toISOString(),
+        read: false,
+        subscriptionStatus: 'rejected',
+        message: `❌ Subscription Rejected: ${target.fullName} (${target.telegramUsername}) payment proof rejected. Status: Rejected / Free Trial`
+      };
+      setAdminNotifications(prev => [notif, ...prev.map(n => (n.userId === userId ? { ...n, read: true } : n))]);
+    } else {
+      setAdminNotifications(prev =>
+        prev.map(n => (n.userId === userId ? { ...n, read: true } : n))
+      );
+    }
 
     // Broadcast instant rejection event so subscriber is immediately notified
     window.dispatchEvent(
@@ -1248,12 +1422,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const adminExtendUser = (userId: string, days: number = 30) => {
     if (!isAdmin || !Number.isInteger(days) || days < 1) return;
+    let newExpiryIso = '';
     setUsers(prev => {
       const updated = prev.map(u => {
         if (u.id === userId) {
           const currentExpiry = u.expiresAt ? new Date(u.expiresAt).getTime() : Date.now();
           const baseTime = Math.max(currentExpiry, Date.now());
           const newExpiry = new Date(baseTime + days * 24 * 60 * 60 * 1000);
+          newExpiryIso = newExpiry.toISOString();
           return {
             ...u,
             subscriptionStatus: 'active_paid' as const,
@@ -1266,6 +1442,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveLocal(STORAGE_KEY_USERS, JSON.stringify(updated));
       return updated;
     });
+
+    const target = users.find(u => u.id === userId);
+    if (target) {
+      const notif: AdminNotification = {
+        id: `notif-ext-${Date.now()}`,
+        type: 'status_change',
+        userId,
+        telegramUsername: target.telegramUsername,
+        fullName: target.fullName,
+        amount: 3900,
+        timestamp: new Date().toISOString(),
+        read: true,
+        subscriptionStatus: 'active_paid',
+        message: `⏳ Access Extended: ${target.fullName} (${target.telegramUsername}) extended +${days} days. Status: Active Paid`
+      };
+      setAdminNotifications(prev => [notif, ...prev]);
+    }
   };
 
   const switchUser = (userId: string) => {
@@ -1359,6 +1552,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         adminGrantLifetime,
         adminResetToTrial,
         adminDeleteUser,
+        adminClearAllStudents,
         adminNotifications,
         markNotificationRead,
         clearAllNotifications,

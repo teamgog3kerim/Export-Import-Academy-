@@ -109,10 +109,18 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     triggerTelegramHaptic('medium');
 
+    const rawDigits = phoneNumber.replace(/[\s\-\(\)\+]/g, '');
+    let normPhone = rawDigits;
+    if (normPhone.startsWith('251')) {
+      normPhone = '0' + normPhone.slice(3);
+    } else if ((normPhone.startsWith('9') || normPhone.startsWith('7')) && normPhone.length === 9) {
+      normPhone = '0' + normPhone;
+    }
+
     const result = seamlessTelegramAuth({
       telegramUsername: trimmed,
       fullName: fullName.trim(),
-      phoneNumber: phoneNumber.trim()
+      phoneNumber: normPhone
     });
 
     triggerTelegramHaptic('success');
@@ -345,18 +353,41 @@ export const TelegramAuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
-                  <Smartphone className="h-3.5 w-3.5 text-neutral-400" />
-                  <span>Mobile Phone Number</span>
-                </label>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={e => setPhoneNumber(e.target.value)}
-                  placeholder="09 11 22 33 44"
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-900 dark:text-neutral-100 font-mono text-xs"
-                />
+              <div className="space-y-1.5 p-3 rounded-2xl bg-sky-500/5 dark:bg-sky-500/10 border border-sky-200/80 dark:border-sky-800/60 text-xs">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 text-xs">
+                    <Smartphone className="h-3.5 w-3.5 text-[#229ed9]" />
+                    <span>Mobile Phone Number</span>
+                  </label>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300">
+                    Without +251 (09... or 07...)
+                  </span>
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={e => {
+                      let cleaned = e.target.value.replace(/[^\d+]/g, '');
+                      if (cleaned.startsWith('+251')) cleaned = '0' + cleaned.slice(4);
+                      else if (cleaned.startsWith('251') && cleaned.length >= 4) cleaned = '0' + cleaned.slice(3);
+                      else if (cleaned.startsWith('+')) cleaned = cleaned.replace(/^\+/, '');
+                      if (cleaned.length > 10) cleaned = cleaned.slice(0, 10);
+                      setPhoneNumber(cleaned);
+                    }}
+                    placeholder="09XXXXXXXX or 07XXXXXXXX"
+                    maxLength={10}
+                    className="w-full px-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl text-neutral-900 dark:text-neutral-100 font-mono text-xs font-semibold"
+                  />
+                  {phoneNumber && (
+                    <span className="absolute right-3 text-[10px] font-mono text-neutral-400">
+                      {phoneNumber.length}/10
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                  Enter 10 digits starting with 09... or 07... (do not include +251).
+                </p>
               </div>
             </div>
           )}

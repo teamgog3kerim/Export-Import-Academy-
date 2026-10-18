@@ -20,13 +20,15 @@ import {
   ClipboardCheck,
   Compass,
   BookMarked,
-  Scale
+  Scale,
+  FileCheck2
 } from 'lucide-react';
 import { LogisticsTradeGlossary } from './LogisticsTradeGlossary';
+import { ExportDocumentationModule } from './ExportDocumentationModule';
 
 export const ResourceLibrary: React.FC = () => {
   const { setActiveNavTab, setSelectedChapterId } = useApp();
-  const [resourceViewTab, setResourceViewTab] = useState<'documents' | 'glossary'>('documents');
+  const [resourceViewTab, setResourceViewTab] = useState<'documents' | 'export_docs' | 'glossary'>('export_docs');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [previewDoc, setPreviewDoc] = useState<ResourceDocument | null>(null);
@@ -147,6 +149,25 @@ Check current proclamations and directives directly with the respective issuing 
       {/* Top Resource Section Switcher */}
       <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-3">
         <button
+          onClick={() => setResourceViewTab('export_docs')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            resourceViewTab === 'export_docs'
+              ? 'bg-amber-800 text-white shadow-xs'
+              : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+          }`}
+        >
+          <FileCheck2 className="w-4 h-4 text-amber-400" />
+          <span>Export Documentation</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ml-1 ${
+            resourceViewTab === 'export_docs'
+              ? 'bg-white/20 text-white'
+              : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300'
+          }`}>
+            4 Core Templates
+          </span>
+        </button>
+
+        <button
           onClick={() => setResourceViewTab('documents')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
             resourceViewTab === 'documents'
@@ -196,8 +217,13 @@ Check current proclamations and directives directly with the respective issuing 
         </button>
       </div>
 
-      {/* VIEW 1: REGULATORY DOCUMENTS & TEMPLATES */}
-      {resourceViewTab === 'documents' ? (
+      {/* VIEW 1: EXPORT DOCUMENTATION MODULE (SALES CONTRACT, PROFORMA INVOICE, PACKING LIST, C/O) */}
+      {resourceViewTab === 'export_docs' && (
+        <ExportDocumentationModule />
+      )}
+
+      {/* VIEW 2: REGULATORY DOCUMENTS & DIRECTIVES */}
+      {resourceViewTab === 'documents' && (
         <>
           {/* Dynamic Export Document Checklist Generator Gateway */}
           <div className="bg-gradient-to-r from-amber-900/10 via-amber-800/10 to-stone-900/10 dark:from-amber-950/40 dark:via-stone-900/40 dark:to-neutral-900 border border-amber-300 dark:border-amber-800/80 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
@@ -368,8 +394,10 @@ Check current proclamations and directives directly with the respective issuing 
         })}
       </div>
         </>
-      ) : (
-        /* VIEW 2: LOGISTICS & TRADE GLOSSARY */
+      )}
+
+      {/* VIEW 3: LOGISTICS & TRADE GLOSSARY */}
+      {resourceViewTab === 'glossary' && (
         <LogisticsTradeGlossary
           onOpenChapter={(chapterNumber) => {
             setSelectedChapterId(`ch-${chapterNumber}`);
